@@ -333,10 +333,31 @@ Dependencies: EPIC-0001
 US-0007 (EPIC-0002): As a user, I want to speak my terminal commands in natural language,
 so that I can use the terminal hands-free or more naturally.
 
+Description: A microphone button in the AI input bar activates voice capture. Speech is
+             transcribed (via Web Speech API or a bundled STT library) and populated into
+             the AI input field as text. From that point the existing AI interpret flow
+             handles it identically to typed input. No audio is stored or transmitted beyond
+             what is required for transcription.
+
 Priority: Medium
 Estimate: L
 Status: Planned
 Dependencies: US-0002
+
+Acceptance Criteria:
+  - [ ] AC-0058: A microphone button is visible in the AI input bar
+  - [ ] AC-0059: Clicking the mic button activates voice capture and shows a recording indicator
+  - [ ] AC-0060: Transcribed text is placed into the AI input field; user can edit before submitting
+  - [ ] AC-0061: Clicking the mic button again (or pressing Escape) cancels recording without submitting
+  - [ ] AC-0062: If the platform denies microphone permission, a clear actionable error is shown
+  - [ ] AC-0063: No audio data is stored to disk or transmitted beyond what the STT library requires
+  - [ ] AC-0064: Voice input produces the same AI interpret + command preview flow as typed input
+
+Definition of Done (DOD):
+  - [ ] All AC above are met
+  - [ ] Tested on macOS, Windows, and Linux
+  - [ ] STT library/API pinned and documented in findings.md
+  - [ ] Session Close Protocol completed
 ```
 
 ---
@@ -347,10 +368,28 @@ Dependencies: US-0002
 US-0008 (EPIC-0002): As a user, I want to run AI command interpretation using a locally
 hosted model via Ollama, so that I can use the terminal without sending data to external APIs.
 
+Description: Implements OllamaProvider behind the existing ProviderInterface. User configures
+             the Ollama host URL and selects a locally available model (fetched from Ollama's
+             /api/tags endpoint). All inference runs locally — no data leaves the machine.
+
 Priority: Medium
 Estimate: M
 Status: Planned
 Dependencies: US-0005
+
+Acceptance Criteria:
+  - [ ] AC-0065: Selecting "Ollama" as provider shows a host URL field (default: http://localhost:11434)
+  - [ ] AC-0066: Available local models are fetched from Ollama and displayed in a dropdown
+  - [ ] AC-0067: "Test connection" validates the Ollama host is reachable and the selected model is loaded
+  - [ ] AC-0068: AI interpret flow works end-to-end using the local Ollama model
+  - [ ] AC-0069: If Ollama is unreachable, a clear error is shown with a link to Ollama setup docs
+  - [ ] AC-0070: No request data is sent to any external API when Ollama is the selected provider
+
+Definition of Done (DOD):
+  - [ ] All AC above are met
+  - [ ] OllamaProvider implements ProviderInterface with no provider-specific logic outside tools/providers/
+  - [ ] Tested with at least two local models (e.g. llama3, mistral)
+  - [ ] Session Close Protocol completed
 ```
 
 ---
@@ -361,10 +400,28 @@ Dependencies: US-0005
 US-0009 (EPIC-0002): As a user, I want the AI to remember recent commands I've run in
 this session, so that its suggestions are aware of what I've already done.
 
+Description: The last N executed commands (and their exit codes) are included in the
+             AI request payload's "history" field. This gives the AI context to avoid
+             repeating commands, reference prior output, and chain operations logically.
+             History is scoped to the current tab/session and is not persisted across app restarts.
+
 Priority: Medium
 Estimate: M
 Status: Planned
 Dependencies: US-0002
+
+Acceptance Criteria:
+  - [ ] AC-0071: Executed commands are appended to the session history after each execution
+  - [ ] AC-0072: The last 20 commands (configurable) are included in every AI request payload
+  - [ ] AC-0073: History is scoped per tab — each tab maintains its own independent history
+  - [ ] AC-0074: History is not persisted to disk and is cleared when the tab is closed
+  - [ ] AC-0075: AI suggestions demonstrably reference prior context (e.g. avoid re-running a completed step)
+  - [ ] AC-0076: History does not grow unbounded — oldest entries are dropped once the limit is reached
+
+Definition of Done (DOD):
+  - [ ] All AC above are met
+  - [ ] History limit documented in MEMORY.md
+  - [ ] Session Close Protocol completed
 ```
 
 ---
@@ -427,10 +484,29 @@ Dependencies: EPIC-0001, EPIC-0002
 US-0011 (EPIC-0003): As a user, I want to connect to AI model subscriptions using OAuth,
 so that I don't have to manually manage API keys for supported providers.
 
+Description: For supported providers (initially Claude and OpenAI), the user can authenticate
+             via OAuth instead of entering a raw API key. An in-app browser window handles the
+             OAuth flow; the resulting access token is stored in the OS keychain. Token refresh
+             is handled automatically in the background.
+
 Priority: Low
 Estimate: L
 Status: Planned
 Dependencies: US-0005
+
+Acceptance Criteria:
+  - [ ] AC-0077: "Connect with [Provider]" OAuth option appears alongside the API key field for supported providers
+  - [ ] AC-0078: Clicking the OAuth option opens an in-app browser window pointing to the provider's auth URL
+  - [ ] AC-0079: On successful auth, the access token is stored in the OS keychain — never in plaintext
+  - [ ] AC-0080: The provider connection is marked as active and "Test connection" passes after OAuth
+  - [ ] AC-0081: Expired tokens are refreshed automatically without user intervention
+  - [ ] AC-0082: User can disconnect (revoke) the OAuth connection from the settings panel
+
+Definition of Done (DOD):
+  - [ ] All AC above are met
+  - [ ] Security review: no tokens in logs, .tmp/, or config files
+  - [ ] OAuth flow tested on macOS, Windows, and Linux
+  - [ ] Session Close Protocol completed
 ```
 
 ---
@@ -441,10 +517,29 @@ Dependencies: US-0005
 US-0012 (EPIC-0003): As a user, I want to download and install TermnOS as a native app
 on macOS, Windows, and Linux, and have it update itself automatically.
 
+Description: Use electron-builder to produce signed installers for macOS (.dmg), Windows
+             (.exe NSIS installer), and Linux (.AppImage / .deb). electron-updater handles
+             auto-update checks against GitHub Releases. Update is downloaded in the background
+             and applied on next launch with user notification.
+
 Priority: Low
 Estimate: L
 Status: Planned
 Dependencies: EPIC-0001 complete
+
+Acceptance Criteria:
+  - [ ] AC-0083: electron-builder produces a runnable installer for macOS, Windows, and Linux
+  - [ ] AC-0084: Installer is code-signed on macOS (Developer ID) and Windows (Authenticode)
+  - [ ] AC-0085: App checks for updates on launch and notifies the user when one is available
+  - [ ] AC-0086: Update downloads in the background without blocking the user
+  - [ ] AC-0087: User is prompted to restart to apply the update; update is not forced
+  - [ ] AC-0088: Auto-update works end-to-end from a GitHub Release asset
+
+Definition of Done (DOD):
+  - [ ] All AC above are met
+  - [ ] Tested install + update flow on all three platforms
+  - [ ] electron-builder and electron-updater pinned in findings.md
+  - [ ] Session Close Protocol completed
 ```
 
 ---
@@ -455,10 +550,30 @@ Dependencies: EPIC-0001 complete
 US-0013 (EPIC-0003): As a user, I want a comprehensive settings panel where I can configure
 every aspect of the terminal — shell, font, theme, provider, and keyboard shortcuts.
 
+Description: A dedicated settings screen (accessible from menu bar and keyboard shortcut)
+             with sections: General (shell, font size, scrollback limit), Appearance (theme
+             mode, color scheme), AI Provider (provider selector, API key, model, test connection),
+             Keyboard Shortcuts (view and remap), and Advanced (log level, reset to defaults).
+
 Priority: Low
 Estimate: M
 Status: Planned
 Dependencies: US-0005, US-0006
+
+Acceptance Criteria:
+  - [ ] AC-0089: Settings panel is accessible via menu bar and a keyboard shortcut (Cmd/Ctrl + ,)
+  - [ ] AC-0090: General section: user can change shell path, font family, font size, and scrollback limit
+  - [ ] AC-0091: Appearance section: user can change theme mode and color scheme (same picker as US-0006)
+  - [ ] AC-0092: AI Provider section: user can switch provider, update API key, select model, and test connection
+  - [ ] AC-0093: Keyboard Shortcuts section: user can view all shortcuts; at least 5 are remappable
+  - [ ] AC-0094: All changes take effect immediately without restarting the app
+  - [ ] AC-0095: "Reset to defaults" restores all settings to factory values after confirmation
+
+Definition of Done (DOD):
+  - [ ] All AC above are met
+  - [ ] Settings panel is fully keyboard-navigable
+  - [ ] Accessibility audit passed (WCAG 2.1 AA)
+  - [ ] Session Close Protocol completed
 ```
 
 ---
@@ -469,8 +584,30 @@ Dependencies: US-0005, US-0006
 US-0014 (EPIC-0003): As a developer, I want to build and install plugins that extend
 TermnOS functionality, so that the community can contribute new features.
 
+Description: A plugin API that allows third-party packages to register new AI providers,
+             commands, themes, and UI panels. Plugins are npm packages installed into a
+             designated plugins directory. A plugin manager UI lists installed plugins and
+             allows install/uninstall. Plugins run in a sandboxed context with declared
+             permissions — they cannot access arbitrary system resources without approval.
+
 Priority: Low
 Estimate: XL
 Status: Planned
 Dependencies: EPIC-0001, EPIC-0002 complete
+
+Acceptance Criteria:
+  - [ ] AC-0096: A public Plugin API is documented in architecture/ with stable versioned interfaces
+  - [ ] AC-0097: A plugin can register a new AI provider that appears in the provider selector
+  - [ ] AC-0098: A plugin can register a new color scheme that appears in the theme picker
+  - [ ] AC-0099: Plugins are installed by placing an npm package in the plugins directory
+  - [ ] AC-0100: A plugin manager UI lists installed plugins with name, version, and enable/disable toggle
+  - [ ] AC-0101: Plugins run in a sandboxed context — they cannot access the filesystem or network beyond declared permissions
+  - [ ] AC-0102: A malformed or crashing plugin does not crash the host app — errors are isolated and logged
+
+Definition of Done (DOD):
+  - [ ] All AC above are met
+  - [ ] Plugin API documented in architecture/PLUGIN_API.md
+  - [ ] At least one example plugin built and tested end-to-end
+  - [ ] Security review: sandbox isolation verified
+  - [ ] Session Close Protocol completed
 ```
