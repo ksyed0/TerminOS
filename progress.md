@@ -15,11 +15,38 @@
   - `.gitignore`, `.env.example`
   - Directories: `tools/`, `tests/`, `architecture/`, `Docs/`, `.tmp/`
 
-### In Progress
-- _None_
-
-### Blockers / Open Questions
-- Discovery Questions in `PROJECT.md` §1 are unanswered — project cannot proceed to coding until these are complete.
+### Blockers
+- Discovery Questions in `PROJECT.md` §1 unanswered → resolved in Session 2
 
 ### Test Coverage
-- N/A — no code written yet. Coverage target: ≥80% when coding begins.
+- N/A — no code written. Target: ≥80% when coding begins.
+
+---
+
+## 2026-03-14 — Session 2: Startup Sequence & Discovery
+
+### Completed
+- **Fresh-Eyes Audit:** Full project review completed before reading instruction files. All issues documented in session plan.
+- **Startup sequence:** Read AGENTS.md, MEMORY.md, progress.md, PROMPT_LOG.md, findings.md, MIGRATION_LOG.md.
+- **All 5 Discovery Questions answered.** Project is now UNBLOCKED.
+- **PROJECT.md fully populated:** §1 (Discovery), §2 (Data Schema), §3 (Architectural Invariants), §4 (IPC API Design), §5 (User Profile), §6 (Design System incl. theme modes + 12 color schemes), §7 (Logging), §8 (Performance Baselines).
+- **RELEASE_PLAN.md initialized:** EPIC-0001 (MVP, 6 stories with full ACs), EPIC-0002 (Release 1.1, 4 stories), EPIC-0003 (Release 1.2, 4 stories). Total: 3 EPICs, 14 User Stories, 36 Acceptance Criteria.
+- **ID_REGISTRY.md updated:** EPIC next = 0004, US next = 0015, AC next = 0037.
+- **Session logs updated:** PROMPT_LOG.md, progress.md, MEMORY.md.
+
+### Project: TermnOS
+- **Type:** Open source cross-platform AI terminal emulator
+- **Stack:** Electron + TypeScript/Node.js
+- **AI Backend:** Multi-provider (Claude API, OpenAI API, Ollama for local models)
+- **Key invariants:** Never execute silently. Always confirm destructive commands. API keys in OS keychain only.
+
+### Next Steps
+- Phase 2 (Link): Build `tools/` handshake scripts to verify AI provider connections
+- Begin US-0001 (PTY integration) and US-0005 (provider config) in parallel
+- Research and pin dependencies: node-pty, keytar, electron-log, xterm.js
+
+### Blockers
+- None. Project is unblocked and ready for Phase 2.
+
+### Test Coverage
+- N/A — no code written yet. Target: ≥80% when coding begins.

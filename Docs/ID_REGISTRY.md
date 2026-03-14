@@ -4,9 +4,9 @@
 
 | **Sequence** | **Next Available ID** | **Last Assigned** |
 | ------------ | --------------------- | ----------------- |
-| EPIC         | EPIC-0001             | —                 |
-| US           | US-0001               | —                 |
+| EPIC         | EPIC-0004             | EPIC-0003         |
+| US           | US-0017               | US-0016           |
 | TASK         | TASK-0001             | —                 |
-| AC           | AC-0001               | —                 |
+| AC           | AC-0058               | AC-0057           |
 | TC           | TC-0001               | —                 |
 | BUG          | BUG-0001              | —                 |
