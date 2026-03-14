@@ -70,12 +70,14 @@ Providers: `ClaudeProvider`, `OpenAIProvider`, `OllamaProvider`
 
 | Package | Version | Purpose | Licence |
 |---------|---------|---------|---------|
-| node-pty | TBD — pin before US-0001 | PTY integration for terminal shell | MIT |
-| keytar | TBD — pin before US-0005 | OS keychain for API key storage | MIT |
-| electron-log | TBD — pin before build | Structured logging for production | MIT |
-| xterm.js | TBD — pin before US-0001 | Terminal renderer in Electron | MIT |
-
-> Pin all versions before first use. Document in `findings.md`.
+| electron | 41.0.2 | Cross-platform desktop shell | MIT |
+| @anthropic-ai/sdk | 0.39.0 | Claude API provider | MIT |
+| openai | 4.97.0 | OpenAI API provider | MIT |
+| node-pty | 1.1.0 | PTY integration for terminal shell | MIT |
+| keytar | 7.9.0 | OS keychain for API key storage | MIT |
+| xterm | 5.3.0 | Terminal renderer in Electron | MIT |
+| xterm-addon-fit | 0.8.0 | Auto-fit terminal to container | MIT |
+| electron-log | 5.3.4 | Structured logging for production | MIT |
 
 ---
 
@@ -125,4 +127,10 @@ _None._
 
 > Full details in `Docs/LESSONS.md`.
 
-_None yet._
+**Always call `warnSpy.mockRestore()` before asserting on console.warn.** *Learned when a `console.warn` mock in a prior test leaked into the next test because mockRestore() was missing, causing spurious assertion failures.*
+
+**Always use `mockImplementationOnce` (not `mockImplementation`) for throw-once scenarios in tests.** *Learned when a `fs.writeFileSync` mock that threw for all calls broke a subsequent test in the same describe block that expected the write to succeed.*
+
+**xterm.js FitAddon.fit() must be called before `terminal:spawn` IPC.** *Calling spawn before fit sends cols=80 rows=24 defaults; the correct terminal size is only known after fit() runs.*
+
+**API keys must never appear in `config:get` IPC responses.** *ConfigStore.get() returns AppConfig which has no api_key field — this is the correct design. The key lives in keytar only.*

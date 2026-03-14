@@ -4,10 +4,10 @@
 
 ---
 
-## Status: PHASE 2 COMPLETE — READY FOR PHASE 3
+## Status: PHASE 3 COMPLETE — READY FOR PHASE 4
 
-Phase 1 (Blueprint) completed in Session 2. Phase 2 (Link) completed in Session 4.
-Next: Phase 3 (Architect) — Electron main process, IPC handlers, PTY manager, renderer.
+Phase 1 (Blueprint) completed in Session 2. Phase 2 (Link) completed in Session 4. Phase 3 (Architect) completed in Session 5.
+Next: Phase 4 (Integration Testing & e2e) — Playwright/Spectron, PTY↔xterm round-trip, electron-builder packaging config.
 
 ---
 

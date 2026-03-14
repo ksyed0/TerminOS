@@ -13,6 +13,10 @@
 | `electron` | 41.0.2 | Cross-platform desktop shell (Chromium + Node.js) | MIT | Upgraded from 33.x — resolves GHSA-vmqv-hx8q-j7mg (ASAR integrity bypass, high severity) |
 | `@anthropic-ai/sdk` | 0.39.0 | Official Anthropic SDK for Claude API (messages.create) | MIT | Used in ClaudeProvider; supports streaming, tool use, full type safety |
 | `openai` | 4.97.0 | Official OpenAI SDK (chat.completions.create) | MIT | Used in OpenAIProvider; supports response_format: json_object |
+| `node-pty` | 1.1.0 | Spawn + manage a shell PTY; sends SIGWINCH on resize | MIT | Used in PtyManager; wraps native PTY (pty.js on Unix, ConPTY on Windows) |
+| `keytar` | 7.9.0 | Read/write/delete credentials from OS keychain | MIT | API keys only — never written to config file; falls back to env var if keytar unavailable |
+| `xterm` | 5.3.0 | Terminal emulator rendered in DOM canvas | MIT | Renderer only; ANSI/VT100/256-color supported; xterm@5.5.0 not available (notarget) |
+| `xterm-addon-fit` | 0.8.0 | Auto-calculates cols/rows from container dimensions | MIT | fit() called before spawn and on every resize event |
 | `node-fetch` | 3.3.2 | ESM-compatible fetch polyfill (Node < 18 fallback) | MIT | Ollama provider uses native fetch(); node-fetch reserved for future use |
 | `dotenv` | 16.5.0 | `.env` file loader for local development and handshake scripts | BSD-2-Clause | Never loaded in production Electron build; dev/tool use only |
 | `electron-log` | 5.3.4 | Structured logging for Electron (writes to OS app log dir) | MIT | Replaces console.log in production; INFO level default |
