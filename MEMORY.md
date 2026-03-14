@@ -134,3 +134,29 @@ _None._
 **xterm.js FitAddon.fit() must be called before `terminal:spawn` IPC.** *Calling spawn before fit sends cols=80 rows=24 defaults; the correct terminal size is only known after fit() runs.*
 
 **API keys must never appear in `config:get` IPC responses.** *ConfigStore.get() returns AppConfig which has no api_key field — this is the correct design. The key lives in keytar only.*
+
+---
+
+## Coverage Configuration (jest.config.js)
+
+`collectCoverageFrom` now explicitly lists 7 testable compiled modules:
+- `dist/main/config/store.js`
+- `dist/main/providers/claude.js`, `openai.js`, `ollama.js`, `factory.js`
+- `dist/main/pty/manager.js`
+- `dist/renderer/theme.js`
+
+Excluded (untestable without Electron/browser runtime): `dist/main/index.js`, `dist/preload/index.js`, `dist/renderer/index.js`, `dist/main/ipc/handlers.js`.
+
+## Test Mocking Patterns for Electron Modules
+
+- **DOM in Node tests:** Mock `global.document` and `global.window` before `require()`-ing the module under test. Set up before the import, not inside `beforeEach`.
+- **Provider mocks:** Use `jest.mock('../../../src/main/providers/X.js', () => ({ XProvider: jest.fn().mockImplementation(...) }))`. The `moduleNameMapper` redirects `src/` → `dist/` transparently.
+
+## CI Workflows (`.github/workflows/`)
+
+| Workflow | Trigger | Key jobs |
+|----------|---------|----------|
+| `ci.yml` | push/PR to main, develop | lint → build → test:coverage → audit |
+| `plan-visualizer.yml` | push to main/develop (Docs/ paths) or workflow_dispatch | generate-plan → upload-pages → deploy-pages |
+
+**Path note:** GitHub Pages artifact path is `./Docs` (capital D) — matches the actual directory.

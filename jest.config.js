@@ -6,7 +6,20 @@ module.exports = {
   moduleNameMapper: {
     '^((?:.*/)?)src/(.+)\\.js$': '$1dist/$2.js',
   },
-  collectCoverageFrom: ['tools/lib/**/*.js'],
+  collectCoverageFrom: [
+    // Tools (plain JS utilities)
+    'tools/lib/**/*.js',
+    // Compiled TypeScript src — testable modules only
+    // (Electron entry, preload context-bridge, renderer DOM, and IPC handlers
+    //  require a full Electron/browser environment and are excluded here)
+    'dist/main/config/store.js',
+    'dist/main/providers/claude.js',
+    'dist/main/providers/openai.js',
+    'dist/main/providers/ollama.js',
+    'dist/main/providers/factory.js',
+    'dist/main/pty/manager.js',
+    'dist/renderer/theme.js',
+  ],
   coverageReporters: ['text', 'lcov', 'json-summary'],
   coverageThreshold: {
     global: {
