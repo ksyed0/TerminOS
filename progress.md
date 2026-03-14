@@ -141,8 +141,35 @@
 ### Blockers
 - None.
 
+---
+
+## Session 7 — 2026-03-14
+
+### Work Done
+- **Branch:** `claude/add-e2e-tests-builder-bVS43`
+- **Installed devDependencies:** `@playwright/test`, `electron-builder`, `esbuild`
+- **Fixed Electron path bugs** (never previously run as a real app):
+  - `src/main/index.ts`: preload path `../../preload/index.js` → `../preload/index.js`
+  - `src/main/index.ts`: loadFile path `../../renderer/index.html` → `../renderer/index.html`
+- **Added `tools/copy-assets.js`**: copies `src/renderer/{index.html,styles.css}` → `dist/renderer/` after `tsc`
+- **Added `tools/bundle-renderer.js`**: bundles `src/renderer/index.ts` with esbuild into a sandboxed-compatible IIFE at `dist/renderer/index.js`. Fixes CommonJS `require` unavailability in `sandbox: true` renderer.
+- **Added `--test-mode` flag**: `TEST_MODE = process.argv.includes('--test-mode')` in `src/main/index.ts`; skips keytar in `src/main/config/store.ts` constructor when `testMode=true`.
+- **Created `playwright.config.ts`**: root-level Playwright config pointing to `tests/e2e/`
+- **Created `tests/e2e/app.spec.ts`**: 3 Playwright e2e tests:
+  1. Window title = "TermnOS"
+  2. `.xterm-screen` element visible (DOM renderer, not canvas, in headless CI)
+  3. PTY round-trip: `echo hello_e2e` produces output via IPC accumulator
+- **Created `electron-builder.yml`**: cross-platform packaging (Mac dmg/zip, Win nsis/zip, Linux AppImage/deb)
+- **Created `.github/workflows/e2e.yml`**: CI workflow with Xvfb for headless Electron e2e
+- **Updated `package.json` scripts**: `test:e2e`, `test:e2e:headed`, `dist`, `dist:mac`, `dist:win`, `dist:linux`
+- **Updated `ci.yml` build script** now runs `tsc && copy-assets && bundle-renderer`
+
+### Test Results (Session 7 final)
+- **Unit: 16 suites, 233 tests — all passing**
+- **E2E: 3/3 passing** (Playwright + Electron, headless Xvfb)
+
+### Blockers
+- None.
+
 ### Next Steps
-- Merge `claude/create-agents-md-7q8Pl` → `develop` via PR
-- Install Playwright/Spectron for Electron e2e tests
-- Verify PTY ↔ xterm.js round-trip in a real Electron window
-- Add `electron-builder` config for cross-platform packaging
+- Merge `claude/add-e2e-tests-builder-bVS43` → `develop` via PR (external, GitHub UI)

@@ -9,6 +9,9 @@ import * as path from 'path';
 import { ConfigStore } from './config/store';
 import { registerHandlers, killAllPtys } from './ipc/handlers';
 
+/** True when launched with --test-mode (e.g. by Playwright e2e tests). */
+export const TEST_MODE = process.argv.includes('--test-mode');
+
 let mainWindow: BrowserWindow | null = null;
 let configStore: ConfigStore;
 
@@ -27,7 +30,7 @@ function createWindow(): void {
     minHeight: 600,
     backgroundColor: '#1d1f21',  // Tomorrow Night default — overridden by renderer
     webPreferences: {
-      preload: path.join(__dirname, '../../preload/index.js'),
+      preload: path.join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
@@ -48,11 +51,11 @@ function createWindow(): void {
   registerHandlers(mainWindow, configStore);
 
   // Load renderer
-  mainWindow.loadFile(path.join(__dirname, '../../renderer/index.html'));
+  mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
 }
 
 app.whenReady().then(() => {
-  configStore = new ConfigStore();
+  configStore = new ConfigStore(undefined, TEST_MODE);
   createWindow();
 
   // macOS: re-create window when dock icon is clicked

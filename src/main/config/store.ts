@@ -54,9 +54,11 @@ async function getKeytar(): Promise<typeof import('keytar') | null> {
 export class ConfigStore {
   private configPath: string;
   private _config: AppConfig;
+  private testMode: boolean;
 
-  constructor(configPath?: string) {
+  constructor(configPath?: string, testMode = false) {
     this.configPath = configPath ?? getConfigPath();
+    this.testMode = testMode;
     this._config = this._read();
   }
 
@@ -91,6 +93,7 @@ export class ConfigStore {
 
   /** Read API key for a provider from OS keychain. */
   async getApiKey(provider: string): Promise<string | null> {
+    if (this.testMode) return null;
     const kt = await getKeytar();
     if (!kt) {
       return process.env[`${provider.toUpperCase()}_API_KEY`] ?? null;
@@ -105,6 +108,7 @@ export class ConfigStore {
 
   /** Store API key for a provider in OS keychain. */
   async setApiKey(provider: string, key: string): Promise<void> {
+    if (this.testMode) return;
     const kt = await getKeytar();
     if (!kt) {
       console.warn('E_KEYCHAIN_SET: keytar unavailable — key not persisted');
@@ -120,6 +124,7 @@ export class ConfigStore {
 
   /** Remove API key for a provider from OS keychain. */
   async deleteApiKey(provider: string): Promise<void> {
+    if (this.testMode) return;
     const kt = await getKeytar();
     if (!kt) return;
     try {
