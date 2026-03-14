@@ -69,3 +69,49 @@
 | 500 | Internal Server Error | SystemError |
 | 502 | Bad Gateway | IntegrationError |
 | 503 | Service Unavailable | IntegrationError |
+
+---
+
+## TermnOS Application Error Codes
+
+> IPC-layer error codes used between Electron main process and renderer.
+
+| Code | Category | Description | User-Visible? | Recovery |
+|------|----------|-------------|---------------|---------|
+| `E_PTY_SPAWN` | PTY | Failed to spawn shell process | Yes | Offer shell re-select in settings |
+| `E_PTY_WRITE` | PTY | Failed to write data to PTY | No — log WARN | Reconnect PTY |
+| `E_PTY_RESIZE` | PTY | Failed to send SIGWINCH / resize | No — log WARN | Continue |
+| `E_PTY_DEAD` | PTY | PTY process exited unexpectedly | Yes | Show exit code, offer restart |
+| `E_AI_TIMEOUT` | AI | Provider took > 30s to respond | Yes | Retry or cancel |
+| `E_AI_INVALID_JSON` | AI | Provider returned non-JSON response | Yes | Keep user input, retry |
+| `E_AI_RATE_LIMIT` | AI | API rate limit hit | Yes | Exponential backoff, show countdown |
+| `E_AI_AUTH` | AI | API key invalid or expired | Yes | Redirect to provider settings |
+| `E_AI_UNAVAILABLE` | AI | Provider unreachable (network) | Yes | Retry or switch provider |
+| `E_CONFIG_READ` | Config | Config file unreadable or corrupt | Yes | Reset to DEFAULT_CONFIG |
+| `E_CONFIG_WRITE` | Config | Cannot write config to disk | Yes | Log ERROR, show toast |
+| `E_KEYCHAIN_GET` | Config | Keytar cannot read API key | Yes | Prompt user to re-enter key |
+| `E_KEYCHAIN_SET` | Config | Keytar cannot store API key | Yes | Warn — key not persisted |
+| `E_IPC_UNKNOWN` | IPC | Unknown IPC channel received | No — log WARN | N/A |
+| `E_IPC_PAYLOAD` | IPC | Malformed IPC payload | No — log WARN | Return error to renderer |
+
+### IPC Error Shape
+
+All errors returned over IPC use:
+
+```typescript
+interface IPCError {
+  code: string;          // one of the E_* codes above
+  message: string;       // human-readable description
+  retryable: boolean;    // whether renderer should offer retry
+  retryAfterMs?: number; // set for E_AI_RATE_LIMIT
+}
+```
+
+### Logging Levels
+
+| Level | When | Destination |
+|-------|------|-------------|
+| `DEBUG` | Dev only — PTY bytes, AI payloads | Console |
+| `INFO` | Lifecycle events — start, provider switch, session end | electron-log |
+| `WARN` | Recoverable errors — resize fail, keychain miss | electron-log |
+| `ERROR` | User-visible failures — PTY spawn, auth error | electron-log + UI |

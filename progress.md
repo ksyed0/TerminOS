@@ -53,6 +53,42 @@
 
 ---
 
+## 2026-03-14 — Session 5: Phase 3 (Architect) — Full Application Build
+
+### Completed
+
+- **Dependencies installed and pinned:** `node-pty@1.1.0`, `keytar@7.9.0`, `xterm@5.3.0`, `xterm-addon-fit@0.8.0`
+- **Architecture SOPs written:**
+  - `architecture/ipc-channels.md` — 10-channel map, full payload schemas, security rules
+  - `architecture/pty-manager.md` — shell detection, resize/SIGWINCH protocol, multi-tab lifecycle, error handling
+  - `architecture/ERROR_TAXONOMY.md` — extended with 15 TermnOS E_* codes, IPC error shape, log levels
+- **PTY Layer (US-0001):** `src/main/pty/manager.ts` — PtyManager: spawn, write, resize (SIGWINCH), kill, onData/onExit, platform-aware shell detection
+- **Config Layer (US-0005):** `src/main/config/store.ts` — ConfigStore: disk read/write, DEFAULT_CONFIG fallback; API keys via OS keychain (keytar) — never in config file
+- **IPC Handlers:** `src/main/ipc/handlers.ts` — 10 channels; multi-tab via `Map<tabId, PtyManager>`
+- **Electron Main:** `src/main/index.ts` — BrowserWindow (contextIsolation + sandbox), nativeTheme, killAllPtys on quit
+- **Preload:** `src/preload/index.ts` — typed `TerminalAPI` contextBridge
+- **Renderer (US-0006, US-0010, US-0015, US-0016):**
+  - `src/renderer/index.html` — tab bar, panes, AI input bar, preview card, settings panel, theme overlay
+  - `src/renderer/styles.css` — CSS variable theme system, responsive 800×600 min
+  - `src/renderer/theme.ts` — 12 color schemes (7 dark + 5 light), CSS var injection, xterm.js theme map
+  - `src/renderer/index.ts` — xterm.js + FitAddon, multi-tab, splitter drag, font zoom (Cmd ±/0), AI flow, risk badges, destructive confirm
+- **Unit tests:** TC-0108–TC-0133 (26 new tests across PtyManager + ConfigStore)
+
+### Test Coverage
+- **195 tests, 14 suites — all passing**
+- TypeScript compiles cleanly (`--noEmit`)
+
+### Blockers
+- Direct push to `main` blocked by proxy (HTTP 403). PR must be merged externally via GitHub UI.
+
+### Next Steps (Phase 4)
+- Install Playwright/Spectron for Electron e2e tests
+- Verify PTY ↔ xterm.js round-trip in a real Electron window
+- Add `electron-builder` config for cross-platform packaging
+- Write integration tests: AI interpret flow, preview card, destructive confirm, theme persistence, tab lifecycle
+
+---
+
 ## 2026-03-14 — Session 3: AC Coverage & Test Case Authoring
 
 ### Completed
