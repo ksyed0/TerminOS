@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "description": "Open source cross-platform AI terminal emulator",
   "scripts": {
-    "test": "jest",
-    "test:coverage": "jest --coverage",
+    "build": "tsc",
+    "test": "tsc && jest",
+    "test:coverage": "tsc && jest --coverage",
     "plan:test": "jest --watchAll=false",
     "plan:test:coverage": "jest --watchAll=false --coverage",
     "plan:generate": "node tools/generate-plan.js",
@@ -12,7 +13,19 @@
   },
   "devDependencies": {
     "@eslint/js": "9.39.4",
+    "@types/electron": "1.6.10",
+    "@types/node": "22.15.3",
     "eslint": "10.0.3",
-    "jest": "30.3.0"
+    "jest": "30.3.0",
+    "ts-node": "10.9.2",
+    "typescript": "5.8.3"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.39.0",
+    "dotenv": "16.5.0",
+    "electron": "41.0.2",
+    "electron-log": "5.3.4",
+    "node-fetch": "3.3.2",
+    "openai": "4.97.0"
   }
 }
