@@ -1,0 +1,37 @@
+appId: com.termnos.app
+productName: TermnOS
+copyright: "Copyright © 2026 TermnOS Contributors"
+
+directories:
+  buildResources: buildResources
+  output: "release/${version}"
+
+files:
+  - "dist/**/*"
+  - "src/renderer/index.html"
+  - "src/renderer/styles.css"
+  - "package.json"
+
+mac:
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+    - target: zip
+  category: public.app-category.developer-tools
+
+win:
+  target:
+    - target: nsis
+    - target: zip
+
+linux:
+  target:
+    - target: AppImage
+    - target: deb
+  category: Development
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true

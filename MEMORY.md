@@ -157,6 +157,43 @@ Excluded (untestable without Electron/browser runtime): `dist/main/index.js`, `d
 | Workflow | Trigger | Key jobs |
 |----------|---------|----------|
 | `ci.yml` | push/PR to main, develop | lint → build → test:coverage → audit |
+| `e2e.yml` | push/PR | install → build → xvfb-run playwright test |
 | `plan-visualizer.yml` | push to main/develop (Docs/ paths) or workflow_dispatch | generate-plan → upload-pages → deploy-pages |
 
 **Path note:** GitHub Pages artifact path is `./Docs` (capital D) — matches the actual directory.
+
+## Build Pipeline (Session 7+)
+
+```
+npm run build
+  → tsc                        (compiles src/ → dist/ for main + preload + renderer TS types)
+  → node tools/copy-assets.js  (copies src/renderer/index.html + styles.css → dist/renderer/)
+  → node tools/bundle-renderer.js  (esbuild bundles src/renderer/index.ts → dist/renderer/index.js IIFE)
+```
+
+The renderer is an esbuild IIFE bundle — no `require`/`exports` needed. Works with `sandbox: true` + `nodeIntegration: false`.
+
+## E2E Testing (Session 7+)
+
+- Framework: `@playwright/test` with `_electron` launch API (Spectron deprecated)
+- Test file: `tests/e2e/app.spec.ts`
+- Run locally: `npm run test:e2e` (or `:headed`)
+- Run in CI: `xvfb-run --auto-servernum npm run test:e2e`
+- 3 tests: title, xterm.js DOM render (`.xterm-screen`), PTY round-trip (`echo hello_e2e`)
+- PTY output verified via `page.evaluate()` IPC accumulator: `window.__e2eOutput`
+- Test-mode flag `--test-mode`: skips keytar, passed as Electron arg by Playwright
+
+## Packaging (electron-builder)
+
+- Config: `electron-builder.yml`
+- appId: `com.termnos.app`, productName: `TermnOS`
+- Mac: dmg + zip (x64 + arm64) | Win: nsis + zip | Linux: AppImage + deb
+- Scripts: `npm run dist:mac/win/linux`
+- Output dir: `release/${version}/`
+
+## Hard-Won Lessons (Session 7)
+
+- **Electron path bug**: `../../preload/` from `dist/main/` goes to project root, NOT `dist/preload/`. Use `../preload/`.
+- **Renderer CommonJS**: `tsc` output uses CommonJS `require()` which is unavailable in `sandbox: true` renderer. Bundle with esbuild into IIFE to fix.
+- **xterm.js renderer mode**: In headless CI (Xvfb), xterm.js uses DOM renderer (`xterm-dom-renderer-owner-1`), not canvas. Test for `.xterm-screen` not `.xterm-screen canvas`.
+- **PTY round-trip via IPC**: Install `terminalAPI.onOutput()` listener from `page.evaluate()` before typing; accumulate to `window.__e2eOutput`; use `page.waitForFunction()` to poll.
