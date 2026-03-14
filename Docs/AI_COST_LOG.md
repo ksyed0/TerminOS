@@ -17,3 +17,5 @@ Updated automatically by the Claude Code stop hook (`tools/capture-cost.js`).
 | 2026-03-14 | 40cdd57b-6c4f-4396-9589-39436358636e | claude/create-agents-md-7q8Pl | 0 | 0 | 0 | 0.0000 |
 | 2026-03-14 | 40cdd57b-6c4f-4396-9589-39436358636e | claude/create-agents-md-7q8Pl | 0 | 0 | 0 | 0.0000 |
 | 2026-03-14 | 40cdd57b-6c4f-4396-9589-39436358636e | claude/create-agents-md-7q8Pl | 0 | 0 | 0 | 0.0000 |
+| 2026-03-14 | 40cdd57b-6c4f-4396-9589-39436358636e | claude/create-agents-md-7q8Pl | 0 | 0 | 0 | 0.0000 |
+| 2026-03-14 | b36f2ac4-a4d2-4bf3-b2cd-f6900b9a3e1c | claude/create-agents-md-7q8Pl | 0 | 0 | 0 | 0.0000 |
