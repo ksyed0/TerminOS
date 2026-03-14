@@ -113,3 +113,36 @@
 ### Test Coverage (PlanVisualizer unit tests)
 - 9 suites, 138 tests — all passing (verified during PlanVisualizer install in Session 2).
 - Application code: 0% — no implementation code written yet. Target: ≥80% when Phase 3 (Architect) begins.
+
+---
+
+## 2026-03-14 — Session 6: CI Pipeline, src/ Coverage Expansion & Workflow Fix
+
+### Completed
+- **CI pipeline:** Added `.github/workflows/` with 4 jobs — lint (ESLint), build (tsc), unit-test-coverage (jest --coverage, threshold ≥80%), and vulnerability-scan (npm audit).
+- **SessionStart hook:** Added `.claude/hooks/session-start.sh` — runs `npm install` + `npm run build` for remote Claude Code sessions so dist/ is always ready.
+- **ESLint flat config:** Added `eslint.config.js` using `@eslint/js` + `typescript-eslint` for strict TypeScript linting.
+- **Coverage expansion:** Extended `collectCoverageFrom` in `jest.config.js` to include 7 compiled `dist/` modules (previously only `tools/lib/**/*.js`):
+  - `dist/main/config/store.js`
+  - `dist/main/providers/{claude,openai,ollama,factory}.js`
+  - `dist/main/pty/manager.js`
+  - `dist/renderer/theme.js`
+- **New test file — `tests/unit/providers/factory.test.js`:** 7 tests covering all 3 provider branches (claude/openai/ollama), unknown-provider throw, config pass-through, and multi-instantiation.
+- **New test file — `tests/unit/renderer/theme.test.js`:** 33 tests covering DARK_SCHEMES, LIGHT_SCHEMES, ALL_SCHEMES, `toXtermTheme()`, `schemesForMode()` (incl. auto dark/light via mocked `window.matchMedia`), `findScheme()`, and `applyScheme()` (mocked `document.documentElement`).
+- **Workflow path fix:** Corrected `plan-visualizer.yml` — changed all `./docs` references to `./Docs` (case-sensitive path matching the actual directory).
+
+### Test Coverage (Session 6 final)
+- **16 suites, 233 tests — all passing**
+- Global: 96.21% stmts | 82.43% branches | 95.65% funcs | 97.46% lines
+- `src/renderer/theme.ts`: 100% all dimensions
+- `src/main/providers/factory.ts`: 100% all dimensions
+- All coverage thresholds ≥80% satisfied
+
+### Blockers
+- None.
+
+### Next Steps
+- Merge `claude/create-agents-md-7q8Pl` → `develop` via PR
+- Install Playwright/Spectron for Electron e2e tests
+- Verify PTY ↔ xterm.js round-trip in a real Electron window
+- Add `electron-builder` config for cross-platform packaging
