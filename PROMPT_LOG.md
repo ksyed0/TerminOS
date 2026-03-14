@@ -25,3 +25,13 @@
 | 2026-03-14T01:08:00Z | [Tech Stack] Electron + TypeScript/Node.js. |
 | 2026-03-14T01:08:00Z | [AI Backend] Multi-provider — Claude + OpenAI + local models via Ollama. |
 | 2026-03-14T01:10:00Z | [Design Clarification] Theme selector on startup and from settings menu. Dark / Light / Auto modes. Curated color schemes for each mode. |
+
+---
+
+## Session 3 — 2026-03-14
+
+| Timestamp | Prompt |
+|-----------|--------|
+| 2026-03-14T02:00:00Z | Are there ACs for all stories |
+| 2026-03-14T02:30:00Z | Establish tests for all ACs |
+| 2026-03-14T03:00:00Z | Save session, update ai cost log, progress, commit all changes and merge pr |

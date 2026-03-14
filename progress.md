@@ -50,3 +50,30 @@
 
 ### Test Coverage
 - N/A — no code written yet. Target: ≥80% when coding begins.
+
+---
+
+## 2026-03-14 — Session 3: AC Coverage & Test Case Authoring
+
+### Completed
+- **AC audit:** Identified 7 stories (US-0007–US-0009, US-0011–US-0014) with no Acceptance Criteria.
+- **ACs written:** 45 new ACs (AC-0058–AC-0102) added to all 7 skeleton stories. All 16 user stories now have full AC coverage.
+  - US-0007 (Voice Dictation): AC-0058–0064
+  - US-0008 (Ollama): AC-0065–0070
+  - US-0009 (History/Context): AC-0071–0076
+  - US-0011 (OAuth): AC-0077–0082
+  - US-0012 (Packaging): AC-0083–0088
+  - US-0013 (Settings UI): AC-0089–0095
+  - US-0014 (Plugin System): AC-0096–0102
+- **Test cases created:** TC-0001–TC-0107 (107 total) in Docs/TEST_CASES.md.
+  - One TC per AC minimum; additional edge case, negative, security, and accessibility TCs included.
+  - Coverage: Functional, Negative, Edge Case, Security, Accessibility, Performance.
+- **ID Registry updated:** AC next AC-0103, TC next TC-0108.
+- **Session close:** PROMPT_LOG.md, progress.md, AI_COST_LOG.md updated. PR created and merged to main.
+
+### Blockers
+- None.
+
+### Test Coverage (PlanVisualizer unit tests)
+- 9 suites, 138 tests — all passing (verified during PlanVisualizer install in Session 2).
+- Application code: 0% — no implementation code written yet. Target: ≥80% when Phase 3 (Architect) begins.
