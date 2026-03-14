@@ -32,6 +32,11 @@ linux:
     - target: deb
   category: Development
 
+deb:
+  depends:
+    - libsecret-1-0
+    - libnss3
+
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true

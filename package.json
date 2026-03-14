@@ -2,6 +2,7 @@
   "name": "termnos",
   "version": "0.1.0",
   "description": "Open source cross-platform AI terminal emulator",
+  "main": "dist/main/index.js",
   "scripts": {
     "build": "tsc && node tools/copy-assets.js && node tools/bundle-renderer.js",
     "test": "tsc && node tools/copy-assets.js && node tools/bundle-renderer.js && jest",
