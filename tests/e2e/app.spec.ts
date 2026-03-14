@@ -22,6 +22,7 @@ test.beforeAll(async () => {
     args: [
       path.join(__dirname, '../../dist/main/index.js'),
       '--test-mode',
+      '--no-sandbox',  // required on GitHub Actions — chrome-sandbox not setuid root
     ],
     env: { ...process.env, NODE_ENV: 'test' },
   });
