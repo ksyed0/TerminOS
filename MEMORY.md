@@ -1,0 +1,128 @@
+# MEMORY.md — Persistent Knowledge Base
+
+> Organized by topic. Update or remove entries that are wrong or outdated. Do not write duplicates. Read this file at the start of every session.
+
+---
+
+## Project Identity
+
+| Attribute | Value |
+|-----------|-------|
+| Name | TermnOS |
+| Type | Open source cross-platform AI terminal emulator |
+| Modeled after | Warp terminal |
+| Platforms | macOS, Windows, Linux |
+| Tech stack | Electron + TypeScript/Node.js |
+| AI backend | Multi-provider: Claude API, OpenAI API, Ollama (local) |
+| License | Apache 2.0 |
+
+---
+
+## Architecture: Electron IPC Channels
+
+| Channel | Direction | Description |
+|---------|-----------|-------------|
+| `terminal:input` | renderer → main | User text or voice input |
+| `terminal:output` | main → renderer | Stream PTY stdout/stderr |
+| `ai:interpret` | renderer → main | Natural language → AI → command + metadata |
+| `ai:execute` | renderer → main | User approves; PTY executes |
+| `config:get` | renderer → main | Read user config |
+| `config:set` | renderer → main | Write user config |
+| `provider:test` | renderer → main | Validate API key + model |
+| `theme:change` | renderer → main | Persist theme mode + scheme |
+
+---
+
+## Architecture: ProviderInterface
+
+All AI providers must implement a common interface — no provider-specific logic outside `tools/providers/`. Ensures providers are swappable with zero impact on the rest of the system.
+
+Methods (to be formally defined in `architecture/`):
+- `interpret(request: AIRequest): Promise<AIResponse>`
+- `testConnection(): Promise<boolean>`
+
+Providers: `ClaudeProvider`, `OpenAIProvider`, `OllamaProvider`
+
+---
+
+## Architecture: Key Invariants (Quick Reference)
+
+1. Never execute a command without displaying it first
+2. Destructive commands require explicit modal confirmation
+3. API keys: OS keychain only (keytar) — never plaintext on disk
+4. PTY layer fully decoupled from AI layer
+5. Shell is user-configurable
+6. Theme "auto" reacts to OS changes at runtime
+
+---
+
+## Multi-Tab & Layout System
+
+- **Two modes:** Full-window (tab bar + one active pane) and Splitter (multiple panes with draggable dividers)
+- **Minimum pane width:** 200px in splitter mode
+- **Minimum window size:** 800×600px — all chrome must remain accessible
+- **SIGWINCH:** Must be sent to PTY on every resize (window resize, splitter drag, font zoom)
+- **Font zoom:** Cmd/Ctrl + Plus/Minus/0. Range 10–24px. Persisted to config. Triggers SIGWINCH.
+
+---
+
+## Active Dependencies
+
+| Package | Version | Purpose | Licence |
+|---------|---------|---------|---------|
+| node-pty | TBD — pin before US-0001 | PTY integration for terminal shell | MIT |
+| keytar | TBD — pin before US-0005 | OS keychain for API key storage | MIT |
+| electron-log | TBD — pin before build | Structured logging for production | MIT |
+| xterm.js | TBD — pin before US-0001 | Terminal renderer in Electron | MIT |
+
+> Pin all versions before first use. Document in `findings.md`.
+
+---
+
+## Theme System
+
+**Modes:** Dark | Light | Auto (follows OS)
+
+**Dark schemes (7):** Tomorrow Night, Dracula, Monokai, Solarized Dark, Nord, One Dark, Gruvbox Dark
+
+**Light schemes (5):** Tomorrow, Solarized Light, One Light, Gruvbox Light, GitHub Light
+
+**AI overlay colors (scheme-independent):**
+- AI suggestion / active: `#7c3aed` (purple)
+- Safe: `#22c55e` (green)
+- Caution: `#f59e0b` (amber)
+- Destructive: `#ef4444` (red)
+
+**Contrast requirement:** All scheme text pairs must pass WCAG 2.1 AA (4.5:1). Log results in `findings.md`.
+
+---
+
+## Retry Parameters
+
+| Operation | Max Retries | Backoff Strategy |
+|-----------|------------|-----------------|
+| HTTP requests (transient errors) | 4 | Exponential: 2s, 4s, 8s, 16s |
+| Git push (network failures) | 4 | Exponential: 2s, 4s, 8s, 16s |
+| AI provider calls (timeout/rate limit) | 3 | Exponential: 1s, 2s, 4s |
+
+---
+
+## Deprecated Endpoints
+
+_None._
+
+---
+
+## Cached Data
+
+| What | Layer | TTL | Invalidation Strategy |
+|------|-------|-----|-----------------------|
+| — | — | — | _None yet — add as caching is implemented_ |
+
+---
+
+## Hard-Won Lessons (Quick Reference)
+
+> Full details in `Docs/LESSONS.md`.
+
+_None yet._

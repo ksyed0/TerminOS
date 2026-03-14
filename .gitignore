@@ -1,0 +1,40 @@
+# Environment variables — never commit secrets
+.env
+
+# Temporary files — ephemeral, never committed
+.tmp/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.dylib
+node_modules/
+.next/
+.nuxt/
+out/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Test and coverage artifacts
+.coverage
+coverage/
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+junit.xml
+
+# Logs (application logs — not project tracking files)
+*.log
