@@ -23,7 +23,7 @@ Description: Delivers a functional cross-platform terminal emulator with AI natu
              confirmation, AI provider configuration, theme selection, multi-tab with splitter
              and full-window modes, responsive layout, and font zoom.
 Release Target: MVP
-Status: Planned
+Status: In Progress
 Dependencies: None
 ```
 
@@ -41,7 +41,8 @@ Description: Electron app with an embedded terminal pane connected to a PTY (nod
 
 Priority: High
 Estimate: L
-Status: Planned
+Status: In Progress
+Branch: claude/phase2-provider-handshake
 
 Acceptance Criteria:
   - [ ] AC-0001: App launches and displays a terminal pane
@@ -82,7 +83,8 @@ Description: AI input bar (always visible) accepts natural language. On submit, 
 
 Priority: High
 Estimate: L
-Status: Planned
+Status: In Progress
+Branch: feature/US-0002-ai-nl-command-interpret
 
 Acceptance Criteria:
   - [ ] AC-0006: AI input bar is visible and accessible at all times
