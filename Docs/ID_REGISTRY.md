@@ -9,4 +9,4 @@
 | TASK         | TASK-0013             | TASK-0012         |
 | AC           | AC-0103               | AC-0102           |
 | TC           | TC-0140               | TC-0139           |
-| BUG          | BUG-0001              | —                 |
+| BUG          | BUG-0010              | BUG-0009          |
