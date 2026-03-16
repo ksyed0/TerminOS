@@ -53,6 +53,42 @@
 
 ---
 
+## 2026-03-14 — Session 5: Phase 3 (Architect) — Full Application Build
+
+### Completed
+
+- **Dependencies installed and pinned:** `node-pty@1.1.0`, `keytar@7.9.0`, `xterm@5.3.0`, `xterm-addon-fit@0.8.0`
+- **Architecture SOPs written:**
+  - `architecture/ipc-channels.md` — 10-channel map, full payload schemas, security rules
+  - `architecture/pty-manager.md` — shell detection, resize/SIGWINCH protocol, multi-tab lifecycle, error handling
+  - `architecture/ERROR_TAXONOMY.md` — extended with 15 TermnOS E_* codes, IPC error shape, log levels
+- **PTY Layer (US-0001):** `src/main/pty/manager.ts` — PtyManager: spawn, write, resize (SIGWINCH), kill, onData/onExit, platform-aware shell detection
+- **Config Layer (US-0005):** `src/main/config/store.ts` — ConfigStore: disk read/write, DEFAULT_CONFIG fallback; API keys via OS keychain (keytar) — never in config file
+- **IPC Handlers:** `src/main/ipc/handlers.ts` — 10 channels; multi-tab via `Map<tabId, PtyManager>`
+- **Electron Main:** `src/main/index.ts` — BrowserWindow (contextIsolation + sandbox), nativeTheme, killAllPtys on quit
+- **Preload:** `src/preload/index.ts` — typed `TerminalAPI` contextBridge
+- **Renderer (US-0006, US-0010, US-0015, US-0016):**
+  - `src/renderer/index.html` — tab bar, panes, AI input bar, preview card, settings panel, theme overlay
+  - `src/renderer/styles.css` — CSS variable theme system, responsive 800×600 min
+  - `src/renderer/theme.ts` — 12 color schemes (7 dark + 5 light), CSS var injection, xterm.js theme map
+  - `src/renderer/index.ts` — xterm.js + FitAddon, multi-tab, splitter drag, font zoom (Cmd ±/0), AI flow, risk badges, destructive confirm
+- **Unit tests:** TC-0108–TC-0133 (26 new tests across PtyManager + ConfigStore)
+
+### Test Coverage
+- **195 tests, 14 suites — all passing**
+- TypeScript compiles cleanly (`--noEmit`)
+
+### Blockers
+- Direct push to `main` blocked by proxy (HTTP 403). PR must be merged externally via GitHub UI.
+
+### Next Steps (Phase 4)
+- Install Playwright/Spectron for Electron e2e tests
+- Verify PTY ↔ xterm.js round-trip in a real Electron window
+- Add `electron-builder` config for cross-platform packaging
+- Write integration tests: AI interpret flow, preview card, destructive confirm, theme persistence, tab lifecycle
+
+---
+
 ## 2026-03-14 — Session 3: AC Coverage & Test Case Authoring
 
 ### Completed
@@ -77,3 +113,63 @@
 ### Test Coverage (PlanVisualizer unit tests)
 - 9 suites, 138 tests — all passing (verified during PlanVisualizer install in Session 2).
 - Application code: 0% — no implementation code written yet. Target: ≥80% when Phase 3 (Architect) begins.
+
+---
+
+## 2026-03-14 — Session 6: CI Pipeline, src/ Coverage Expansion & Workflow Fix
+
+### Completed
+- **CI pipeline:** Added `.github/workflows/` with 4 jobs — lint (ESLint), build (tsc), unit-test-coverage (jest --coverage, threshold ≥80%), and vulnerability-scan (npm audit).
+- **SessionStart hook:** Added `.claude/hooks/session-start.sh` — runs `npm install` + `npm run build` for remote Claude Code sessions so dist/ is always ready.
+- **ESLint flat config:** Added `eslint.config.js` using `@eslint/js` + `typescript-eslint` for strict TypeScript linting.
+- **Coverage expansion:** Extended `collectCoverageFrom` in `jest.config.js` to include 7 compiled `dist/` modules (previously only `tools/lib/**/*.js`):
+  - `dist/main/config/store.js`
+  - `dist/main/providers/{claude,openai,ollama,factory}.js`
+  - `dist/main/pty/manager.js`
+  - `dist/renderer/theme.js`
+- **New test file — `tests/unit/providers/factory.test.js`:** 7 tests covering all 3 provider branches (claude/openai/ollama), unknown-provider throw, config pass-through, and multi-instantiation.
+- **New test file — `tests/unit/renderer/theme.test.js`:** 33 tests covering DARK_SCHEMES, LIGHT_SCHEMES, ALL_SCHEMES, `toXtermTheme()`, `schemesForMode()` (incl. auto dark/light via mocked `window.matchMedia`), `findScheme()`, and `applyScheme()` (mocked `document.documentElement`).
+- **Workflow path fix:** Corrected `plan-visualizer.yml` — changed all `./docs` references to `./Docs` (case-sensitive path matching the actual directory).
+
+### Test Coverage (Session 6 final)
+- **16 suites, 233 tests — all passing**
+- Global: 96.21% stmts | 82.43% branches | 95.65% funcs | 97.46% lines
+- `src/renderer/theme.ts`: 100% all dimensions
+- `src/main/providers/factory.ts`: 100% all dimensions
+- All coverage thresholds ≥80% satisfied
+
+### Blockers
+- None.
+
+---
+
+## Session 7 — 2026-03-14
+
+### Work Done
+- **Branch:** `claude/add-e2e-tests-builder-bVS43`
+- **Installed devDependencies:** `@playwright/test`, `electron-builder`, `esbuild`
+- **Fixed Electron path bugs** (never previously run as a real app):
+  - `src/main/index.ts`: preload path `../../preload/index.js` → `../preload/index.js`
+  - `src/main/index.ts`: loadFile path `../../renderer/index.html` → `../renderer/index.html`
+- **Added `tools/copy-assets.js`**: copies `src/renderer/{index.html,styles.css}` → `dist/renderer/` after `tsc`
+- **Added `tools/bundle-renderer.js`**: bundles `src/renderer/index.ts` with esbuild into a sandboxed-compatible IIFE at `dist/renderer/index.js`. Fixes CommonJS `require` unavailability in `sandbox: true` renderer.
+- **Added `--test-mode` flag**: `TEST_MODE = process.argv.includes('--test-mode')` in `src/main/index.ts`; skips keytar in `src/main/config/store.ts` constructor when `testMode=true`.
+- **Created `playwright.config.ts`**: root-level Playwright config pointing to `tests/e2e/`
+- **Created `tests/e2e/app.spec.ts`**: 3 Playwright e2e tests:
+  1. Window title = "TermnOS"
+  2. `.xterm-screen` element visible (DOM renderer, not canvas, in headless CI)
+  3. PTY round-trip: `echo hello_e2e` produces output via IPC accumulator
+- **Created `electron-builder.yml`**: cross-platform packaging (Mac dmg/zip, Win nsis/zip, Linux AppImage/deb)
+- **Created `.github/workflows/e2e.yml`**: CI workflow with Xvfb for headless Electron e2e
+- **Updated `package.json` scripts**: `test:e2e`, `test:e2e:headed`, `dist`, `dist:mac`, `dist:win`, `dist:linux`
+- **Updated `ci.yml` build script** now runs `tsc && copy-assets && bundle-renderer`
+
+### Test Results (Session 7 final)
+- **Unit: 16 suites, 233 tests — all passing**
+- **E2E: 3/3 passing** (Playwright + Electron, headless Xvfb)
+
+### Blockers
+- None.
+
+### Next Steps
+- Merge `claude/add-e2e-tests-builder-bVS43` → `develop` via PR (external, GitHub UI)

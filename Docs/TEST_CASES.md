@@ -200,6 +200,114 @@ Defect Raised: None
 Notes:
 ```
 
+```
+TC-0134: AI input bar is always visible across contexts
+Related Story: US-0002
+Related Task: TASK-0009
+Related AC: AC-0006
+Type: Functional
+Preconditions: TermnOS is running
+Steps:
+  1. Resize window to 800×600 — verify AI input bar is visible and usable
+  2. Click in the terminal pane and begin typing — verify AI input bar remains visible
+  3. Open the settings panel — verify AI input bar is not obscured
+Expected Result: AI input bar is visible and accessible in all three contexts
+Actual Result:
+Status: [ ] Not Run
+Defect Raised: None
+Notes:
+```
+
+```
+TC-0135: NL submission sends payload with correct shell and history to configured provider
+Related Story: US-0002
+Related Task: TASK-0009
+Related AC: AC-0007
+Type: Functional
+Preconditions: Provider is configured to Claude; shell is set to /bin/bash in settings; two commands have been run via the AI bar in this tab
+Steps:
+  1. Open settings and confirm provider is Claude and shell is /bin/bash
+  2. Submit the NL prompt "show disk usage"
+  3. Intercept the ai:interpret IPC payload
+Expected Result: Payload contains shell: '/bin/bash', history with the two prior commands, and user_input: 'show disk usage'
+Actual Result:
+Status: [ ] Not Run
+Defect Raised: None
+Notes:
+```
+
+```
+TC-0136: Preview card displays command, explanation, and risk badge
+Related Story: US-0002
+Related Task: TASK-0009
+Related AC: AC-0008
+Type: Functional
+Preconditions: AI provider is configured and reachable
+Steps:
+  1. Type "list files in my home directory" in the AI input bar and submit
+  2. Wait for the preview card to appear
+Expected Result: Preview card shows (a) the proposed command text, (b) a plain-English explanation, and (c) a risk badge (e.g. "safe")
+Actual Result:
+Status: [ ] Not Run
+Defect Raised: None
+Notes:
+```
+
+```
+TC-0137: Command is not executed until the Run button is clicked
+Related Story: US-0002
+Related Task: TASK-0009
+Related AC: AC-0009
+Type: Functional
+Preconditions: AI provider is configured and reachable; terminal PTY is active
+Steps:
+  1. Submit NL prompt "echo hello"
+  2. Wait for preview card to appear — do NOT click Run
+  3. Observe terminal output for 3 seconds
+  4. Now click Run
+Expected Result: No PTY input is written before Run is clicked; after Run, the command appears and executes in the terminal
+Actual Result:
+Status: [ ] Not Run
+Defect Raised: None
+Notes:
+```
+
+```
+TC-0138: AI response latency p95 under 2 seconds
+Related Story: US-0002
+Related Task: TASK-0009
+Related AC: AC-0010
+Type: Performance
+Preconditions: AI provider is configured and reachable; stable network connection
+Steps:
+  1. Submit 10 sequential NL prompts (simple commands like "list files", "show date")
+  2. Record elapsed time from submit click to preview card appearance for each request
+  3. Calculate the p95 latency across the 10 measurements
+Expected Result: p95 latency is less than 2000 ms
+Actual Result:
+Status: [ ] Not Run
+Defect Raised: None
+Notes: Excludes first request (cold-start); measure wall-clock time from submit to card visible
+```
+
+```
+TC-0139: Error message displayed in terminal when provider is unreachable
+Related Story: US-0002
+Related Task: TASK-0009
+Related AC: AC-0011
+Type: Negative
+Preconditions: AI provider configured; network disconnected or provider host is down
+Steps:
+  1. Disconnect network (or point ollama_host to an unreachable address)
+  2. Type "show memory usage" in the AI input bar and submit
+  3. Observe the active terminal pane
+Expected Result: A red [AI Error] message appears in the terminal; the app does not crash; the AI input bar remains usable for a retry
+Actual Result:
+Status: [ ] Not Run
+Defect Raised: None
+Notes:
+```
+
 ---
 
 ## US-0003: Command Preview Panel

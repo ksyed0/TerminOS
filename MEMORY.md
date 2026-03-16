@@ -37,11 +37,22 @@
 
 All AI providers must implement a common interface — no provider-specific logic outside `tools/providers/`. Ensures providers are swappable with zero impact on the rest of the system.
 
-Methods (to be formally defined in `architecture/`):
-- `interpret(request: AIRequest): Promise<AIResponse>`
-- `testConnection(): Promise<boolean>`
+Implemented in `tools/providers/`:
+- `provider-interface.js` — abstract base, `IntegrationError`, `ValidationError`, validators
+- `http-client.js` — thin `https`/`http` wrapper; single mockable boundary for tests
+- `claude-provider.js` — Anthropic Messages API (`claude-3-5-haiku-20241022`)
+- `openai-provider.js` — OpenAI Chat Completions API (`gpt-4o-mini`, `json_object` mode)
+- `ollama-provider.js` — Ollama `/api/generate` + `/api/tags` ping (`llama3`, localhost)
 
-Providers: `ClaudeProvider`, `OpenAIProvider`, `OllamaProvider`
+Methods:
+- `interpret(request: AIRequest): Promise<AIResponse>` — natural language → `{ command, explanation, riskLevel }`
+- `testConnection(): Promise<boolean>` — connectivity check; never throws
+
+Error taxonomy:
+- `ValidationError` — HTTP 200 but malformed/invalid response body; never retried
+- `IntegrationError` — connectivity failure; retried 3 times (1s/2s/4s) on 429/529/5xx/network
+
+Retry config: 3 retries (4 total attempts), backoff 1s/2s/4s (per MEMORY.md Retry Parameters)
 
 ---
 
@@ -70,12 +81,15 @@ Providers: `ClaudeProvider`, `OpenAIProvider`, `OllamaProvider`
 
 | Package | Version | Purpose | Licence |
 |---------|---------|---------|---------|
-| node-pty | TBD — pin before US-0001 | PTY integration for terminal shell | MIT |
-| keytar | TBD — pin before US-0005 | OS keychain for API key storage | MIT |
-| electron-log | TBD — pin before build | Structured logging for production | MIT |
-| xterm.js | TBD — pin before US-0001 | Terminal renderer in Electron | MIT |
-
-> Pin all versions before first use. Document in `findings.md`.
+| dotenv | 16.5.0 | Load `.env` for dev-time CLI tools (`verify-providers.js`) | MIT |
+| electron | 41.0.2 | Cross-platform desktop shell | MIT |
+| @anthropic-ai/sdk | 0.39.0 | Claude API provider | MIT |
+| openai | 4.97.0 | OpenAI API provider | MIT |
+| node-pty | 1.1.0 | PTY integration for terminal shell | MIT |
+| keytar | 7.9.0 | OS keychain for API key storage | MIT |
+| xterm | 5.3.0 | Terminal renderer in Electron | MIT |
+| xterm-addon-fit | 0.8.0 | Auto-fit terminal to container | MIT |
+| electron-log | 5.3.4 | Structured logging for production | MIT |
 
 ---
 
@@ -125,4 +139,73 @@ _None._
 
 > Full details in `Docs/LESSONS.md`.
 
-_None yet._
+**Always call `warnSpy.mockRestore()` before asserting on console.warn.** *Learned when a `console.warn` mock in a prior test leaked into the next test because mockRestore() was missing, causing spurious assertion failures.*
+
+**Always use `mockImplementationOnce` (not `mockImplementation`) for throw-once scenarios in tests.** *Learned when a `fs.writeFileSync` mock that threw for all calls broke a subsequent test in the same describe block that expected the write to succeed.*
+
+**xterm.js FitAddon.fit() must be called before `terminal:spawn` IPC.** *Calling spawn before fit sends cols=80 rows=24 defaults; the correct terminal size is only known after fit() runs.*
+
+**API keys must never appear in `config:get` IPC responses.** *ConfigStore.get() returns AppConfig which has no api_key field — this is the correct design. The key lives in keytar only.*
+
+---
+
+## Coverage Configuration (jest.config.js)
+
+`collectCoverageFrom` now explicitly lists 7 testable compiled modules:
+- `dist/main/config/store.js`
+- `dist/main/providers/claude.js`, `openai.js`, `ollama.js`, `factory.js`
+- `dist/main/pty/manager.js`
+- `dist/renderer/theme.js`
+
+Excluded (untestable without Electron/browser runtime): `dist/main/index.js`, `dist/preload/index.js`, `dist/renderer/index.js`, `dist/main/ipc/handlers.js`.
+
+## Test Mocking Patterns for Electron Modules
+
+- **DOM in Node tests:** Mock `global.document` and `global.window` before `require()`-ing the module under test. Set up before the import, not inside `beforeEach`.
+- **Provider mocks:** Use `jest.mock('../../../src/main/providers/X.js', () => ({ XProvider: jest.fn().mockImplementation(...) }))`. The `moduleNameMapper` redirects `src/` → `dist/` transparently.
+
+## CI Workflows (`.github/workflows/`)
+
+| Workflow | Trigger | Key jobs |
+|----------|---------|----------|
+| `ci.yml` | push/PR to main, develop | lint → build → test:coverage → audit |
+| `e2e.yml` | push/PR | install → build → xvfb-run playwright test |
+| `plan-visualizer.yml` | push to main/develop (Docs/ paths) or workflow_dispatch | generate-plan → upload-pages → deploy-pages |
+
+**Path note:** GitHub Pages artifact path is `./Docs` (capital D) — matches the actual directory.
+
+## Build Pipeline (Session 7+)
+
+```
+npm run build
+  → tsc                        (compiles src/ → dist/ for main + preload + renderer TS types)
+  → node tools/copy-assets.js  (copies src/renderer/index.html + styles.css → dist/renderer/)
+  → node tools/bundle-renderer.js  (esbuild bundles src/renderer/index.ts → dist/renderer/index.js IIFE)
+```
+
+The renderer is an esbuild IIFE bundle — no `require`/`exports` needed. Works with `sandbox: true` + `nodeIntegration: false`.
+
+## E2E Testing (Session 7+)
+
+- Framework: `@playwright/test` with `_electron` launch API (Spectron deprecated)
+- Test file: `tests/e2e/app.spec.ts`
+- Run locally: `npm run test:e2e` (or `:headed`)
+- Run in CI: `xvfb-run --auto-servernum npm run test:e2e`
+- 3 tests: title, xterm.js DOM render (`.xterm-screen`), PTY round-trip (`echo hello_e2e`)
+- PTY output verified via `page.evaluate()` IPC accumulator: `window.__e2eOutput`
+- Test-mode flag `--test-mode`: skips keytar, passed as Electron arg by Playwright
+
+## Packaging (electron-builder)
+
+- Config: `electron-builder.yml`
+- appId: `com.termnos.app`, productName: `TermnOS`
+- Mac: dmg + zip (x64 + arm64) | Win: nsis + zip | Linux: AppImage + deb
+- Scripts: `npm run dist:mac/win/linux`
+- Output dir: `release/${version}/`
+
+## Hard-Won Lessons (Session 7)
+
+- **Electron path bug**: `../../preload/` from `dist/main/` goes to project root, NOT `dist/preload/`. Use `../preload/`.
+- **Renderer CommonJS**: `tsc` output uses CommonJS `require()` which is unavailable in `sandbox: true` renderer. Bundle with esbuild into IIFE to fix.
+- **xterm.js renderer mode**: In headless CI (Xvfb), xterm.js uses DOM renderer (`xterm-dom-renderer-owner-1`), not canvas. Test for `.xterm-screen` not `.xterm-screen canvas`.
+- **PTY round-trip via IPC**: Install `terminalAPI.onOutput()` listener from `page.evaluate()` before typing; accumulate to `window.__e2eOutput`; use `page.waitForFunction()` to poll.

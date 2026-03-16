@@ -82,7 +82,7 @@ Description: AI input bar (always visible) accepts natural language. On submit, 
 
 Priority: High
 Estimate: L
-Status: Planned
+Status: In Progress
 
 Acceptance Criteria:
   - [ ] AC-0006: AI input bar is visible and accessible at all times
@@ -106,6 +106,34 @@ Definition of Done (DOD):
   - [ ] Test cases created in TEST_CASES.md
   - [ ] ProviderInterface documented in architecture/
   - [ ] Session Close Protocol completed
+```
+
+```
+TASK-0009: Fix shell context (use config.shell) and per-tab AI command history in renderer
+Type: implementation
+Status: Done
+Branch: feature/US-0002-ai-nl-command-interpret
+```
+
+```
+TASK-0010: Unit tests for ai:interpret and ai:execute IPC handlers (8 cases)
+Type: test
+Status: Done
+Branch: feature/US-0002-ai-nl-command-interpret
+```
+
+```
+TASK-0011: Add test cases TC-0134 through TC-0139 to TEST_CASES.md (one per AC-0006 to AC-0011)
+Type: chore
+Status: Done
+Branch: feature/US-0002-ai-nl-command-interpret
+```
+
+```
+TASK-0012: Update RELEASE_PLAN.md (US-0002 status → In Progress, add TASK-0009 to TASK-0012) and advance ID_REGISTRY
+Type: chore
+Status: Done
+Branch: feature/US-0002-ai-nl-command-interpret
 ```
 
 ---
@@ -610,4 +638,66 @@ Definition of Done (DOD):
   - [ ] At least one example plugin built and tested end-to-end
   - [ ] Security review: sandbox isolation verified
   - [ ] Session Close Protocol completed
+```
+
+---
+
+## Phase 2 (Link) — AI Provider Handshake Tasks
+
+> These tasks implement the dev-time provider verification layer (Phase 2). No Electron/UI code. Run `npm run verify:providers` after TASK-0006 to confirm live credentials.
+
+```
+TASK-0001: provider-interface.js + IntegrationError + ValidationError
+Type: implementation
+Status: Done
+Branch: main
+```
+
+```
+TASK-0002: http-client.js — thin https/http Promise wrapper
+Type: implementation
+Status: Done
+Branch: main
+```
+
+```
+TASK-0003: claude-provider.js — Anthropic Messages API handshake
+Type: implementation
+Status: Done
+Branch: main
+```
+
+```
+TASK-0004: openai-provider.js — OpenAI Chat Completions API handshake
+Type: implementation
+Status: Done
+Branch: main
+```
+
+```
+TASK-0005: ollama-provider.js — Ollama /api/generate + /api/tags handshake
+Type: implementation
+Status: Done
+Branch: main
+```
+
+```
+TASK-0006: verify-providers.js — CLI runner: tests all configured providers
+Type: implementation
+Status: Done
+Branch: main
+```
+
+```
+TASK-0007: Unit tests — http-client, claude-provider, openai-provider, ollama-provider (61 cases)
+Type: test
+Status: Done
+Branch: main
+```
+
+```
+TASK-0008: Config/doc updates — package.json, jest.config.js, .env.example, .gitignore, findings.md, MEMORY.md, RELEASE_PLAN.md, ID_REGISTRY.md
+Type: chore
+Status: Done
+Branch: main
 ```
