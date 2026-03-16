@@ -48,8 +48,8 @@ jobs:
         run: |
           node tools/generate-plan.js
           mkdir -p _site
-          cp plan-status.html _site/index.html
-          cp plan-status.json _site/plan-status.json 2>/dev/null || true
+          cp Docs/plan-status.html _site/index.html
+          cp Docs/plan-status.json _site/plan-status.json 2>/dev/null || true
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
