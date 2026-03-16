@@ -33,3 +33,17 @@ Updated automatically by the Claude Code stop hook (`tools/capture-cost.js`).
 | 2026-03-14 | ca26f04c-e77a-4fb7-ad11-f2f2db683264 | claude/add-e2e-tests-builder-bVS43 | 0 | 0 | 0 | 0.0000 |
 | 2026-03-14 | ca26f04c-e77a-4fb7-ad11-f2f2db683264 | claude/add-e2e-tests-builder-bVS43 | 0 | 0 | 0 | 0.0000 |
 | 2026-03-14 | ca26f04c-e77a-4fb7-ad11-f2f2db683264 | claude/add-e2e-tests-builder-bVS43 | 0 | 0 | 0 | 0.0000 |
+| 2026-03-16 | 5793a010-c199-4462-af12-cabb0fa9de3e | claude/phase2-provider-handshake | 0 | 0 | 0 | 0.0000 |
+| 2026-03-16 | 5793a010-c199-4462-af12-cabb0fa9de3e | claude/phase2-provider-handshake | 0 | 0 | 0 | 0.0000 |
+| 2026-03-16 | 5793a010-c199-4462-af12-cabb0fa9de3e | claude/phase2-provider-handshake | 0 | 0 | 0 | 0.0000 |
+| 2026-03-16 | 5793a010-c199-4462-af12-cabb0fa9de3e | claude/phase2-provider-handshake | 0 | 0 | 0 | 0.0000 |
+| 2026-03-16 | 5793a010-c199-4462-af12-cabb0fa9de3e | claude/phase2-provider-handshake | 0 | 0 | 0 | 0.0000 |
+| 2026-03-16 | 5793a010-c199-4462-af12-cabb0fa9de3e | claude/phase2-provider-handshake | 0 | 0 | 0 | 0.0000 |
+| 2026-03-16 | 5793a010-c199-4462-af12-cabb0fa9de3e | claude/phase2-provider-handshake | 0 | 0 | 0 | 0.0000 |
+
+<!-- BACKFILL 2026-03-16: rows above were captured with the broken hook (all zeros). Corrected rows below parsed from transcript JSONL files. -->
+| 2026-03-16 | f94eb2b8-9e87-4cb7-8406-ce29fbd52e31 | claude/phase2-provider-handshake | 2845 | 8049 | 1947820 | 2.2259 |
+| 2026-03-16 | 33874a6d-fae1-47df-b679-5d7d6ae9c31d | HEAD | 76 | 9478 | 1666410 | 1.8384 |
+| 2026-03-16 | 3e71a9f9-ef12-43fd-9c3f-af3408495f96 | HEAD | 64 | 10458 | 1376809 | 2.0960 |
+| 2026-03-16 | a0159feb-40f6-481d-89f1-d5472426f3f4 | HEAD | 150 | 68252 | 11805618 | 6.3690 |
+| 2026-03-16 | 5793a010-c199-4462-af12-cabb0fa9de3e | claude/phase2-provider-handshake | 425 | 72474 | 21536457 | 12.1265 |
