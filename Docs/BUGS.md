@@ -6,6 +6,12 @@
 
 ## Open Bugs
 
+_None._
+
+---
+
+## Closed Bugs
+
 ```
 BUG-0001: onOutput IPC listener registered per tab but never unsubscribed
 Severity: High
@@ -17,8 +23,8 @@ Steps to Reproduce:
 Expected: One listener handles terminal output for the active tab
 Actual: N ghost listeners remain after N tab open/close cycles; all fire on every output
         event, writing to disposed Terminal instances
-Status: Open
-Fix Branch:
+Status: Fixed
+Fix Branch: feature/US-0002-ai-nl-command-interpret
 Lesson Encoded: No
 ```
 
@@ -33,8 +39,8 @@ Steps to Reproduce:
 Expected: Error message shown to user in terminal
 Actual: try/finally restores UI; result stays undefined; guard `if (!result) return`
         exits silently — user sees nothing
-Status: Open
-Fix Branch:
+Status: Fixed
+Fix Branch: feature/US-0002-ai-nl-command-interpret
 Lesson Encoded: No
 ```
 
@@ -49,8 +55,8 @@ Steps to Reproduce:
 Expected: Both panes remain visible; correct tab is focused
 Actual: otherSplitId is computed from the old activeTabId before it is updated, so the
         wrong pane may be hidden on activation
-Status: Open
-Fix Branch:
+Status: Fixed
+Fix Branch: feature/US-0002-ai-nl-command-interpret
 Lesson Encoded: No
 ```
 
@@ -65,8 +71,8 @@ Steps to Reproduce:
 Expected: Empty string is passed through; shell auto-detection runs
 Actual: || coalesces empty string to '/bin/zsh', overriding the user's intent; inconsistent
         with all other config fields in init() which use ??
-Status: Open
-Fix Branch:
+Status: Fixed
+Fix Branch: feature/US-0002-ai-nl-command-interpret
 Lesson Encoded: No
 ```
 
@@ -81,8 +87,8 @@ Steps to Reproduce:
   2. Compare with handlers.ts and preload/index.ts
 Expected: Schemas reflect the actual tabId field used in every channel
 Actual: tabId is absent from all 5 schemas despite being required by both the handler and preload
-Status: Open
-Fix Branch:
+Status: Fixed
+Fix Branch: feature/US-0002-ai-nl-command-interpret
 Lesson Encoded: No
 ```
 
@@ -96,8 +102,8 @@ Steps to Reproduce:
   2. Send a malformed IPC payload (e.g. missing tabId) to any handler
 Expected: Handler returns { error: 'E_IPC_PAYLOAD' }
 Actual: No validation exists; malformed payloads silently no-op
-Status: Open
-Fix Branch:
+Status: Fixed
+Fix Branch: feature/US-0002-ai-nl-command-interpret
 Lesson Encoded: No
 ```
 
@@ -112,8 +118,8 @@ Steps to Reproduce:
 Expected: E_AI_TIMEOUT returned after a timeout period
 Actual: provider.interpret() awaits indefinitely; E_AI_TIMEOUT (documented in
         ERROR_TAXONOMY.md) is never raised
-Status: Open
-Fix Branch:
+Status: Fixed
+Fix Branch: feature/US-0002-ai-nl-command-interpret
 Lesson Encoded: No
 ```
 
@@ -127,8 +133,8 @@ Steps to Reproduce:
   2. Observe the terminal
 Expected: Meaningful error text or fallback to the error code
 Actual: Terminal shows "[AI Error] undefined"
-Status: Open
-Fix Branch:
+Status: Fixed
+Fix Branch: feature/US-0002-ai-nl-command-interpret
 Lesson Encoded: No
 ```
 
@@ -143,16 +149,10 @@ Steps to Reproduce:
 Expected: Assertion passes (onData was called during spawn)
 Actual: jest.clearAllMocks() in the outer beforeEach clears mockPtyOnData before each test;
         the assertion fails because the call from beforeAll was cleared
-Status: Open
-Fix Branch:
+Status: Fixed
+Fix Branch: feature/US-0002-ai-nl-command-interpret
 Lesson Encoded: No
 ```
-
----
-
-## Closed Bugs
-
-_None._
 
 ---
 
