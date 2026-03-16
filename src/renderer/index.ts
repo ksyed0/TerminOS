@@ -37,6 +37,8 @@ let currentFontSize = 14;
 let currentMode: 'dark' | 'light' | 'auto' = 'auto';
 let currentScheme: ColorScheme = DARK_SCHEMES[0];
 let isFirstRun = false;
+let configuredShell = '/bin/zsh';
+const tabHistory: Map<string, string[]> = new Map();
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
 const tabBar         = document.getElementById('tab-bar')!;
@@ -182,6 +184,7 @@ async function closeTabById(id: string): Promise<void> {
   tab.paneEl.remove();
   tab.tabEl.remove();
   tabs.delete(id);
+  tabHistory.delete(id);
 
   if (id === splitTabId) {
     // Remove splitter
@@ -281,22 +284,27 @@ async function submitAIRequest(): Promise<void> {
   aiInput.value = '';
   aiInput.disabled = true;
   aiSubmitBtn.disabled = true;
+  aiSubmitBtn.textContent = '…';
 
   // Get current context from PTY (we approximate cwd as home for now)
   const request = {
     user_input: input,
     input_type: 'text' as const,
-    shell: '/bin/zsh',
+    shell: configuredShell,
     cwd: '~',
     platform: navigator.userAgent.includes('Mac') ? 'darwin'
       : navigator.userAgent.includes('Win') ? 'win32' : 'linux',
-    history: [],
+    history: tabHistory.get(activeTabId) ?? [],
   };
 
-  const result = await window.terminalAPI.interpret(request);
-
-  aiInput.disabled = false;
-  aiSubmitBtn.disabled = false;
+  let result: unknown;
+  try {
+    result = await window.terminalAPI.interpret(request);
+  } finally {
+    aiInput.disabled = false;
+    aiSubmitBtn.disabled = false;
+    aiSubmitBtn.textContent = '↵';
+  }
 
   if (!result || typeof result !== 'object') return;
   const res = result as Record<string, unknown>;
@@ -332,6 +340,15 @@ function showPreview(response: {
 previewRunBtn.addEventListener('click', () => {
   if (!pendingCommand || !activeTabId) return;
   window.terminalAPI.executeCommand(activeTabId, pendingCommand.command);
+
+  // Track command in per-tab history (capped at 20)
+  if (activeTabId && pendingCommand) {
+    const hist = tabHistory.get(activeTabId) ?? [];
+    hist.push(pendingCommand.command);
+    if (hist.length > 20) hist.shift();
+    tabHistory.set(activeTabId, hist);
+  }
+
   previewCard.classList.add('hidden');
   pendingCommand = null;
   const tab = tabs.get(activeTabId);
@@ -451,6 +468,7 @@ async function init(): Promise<void> {
 
   currentFontSize = (config.font_size as number) ?? 14;
   document.documentElement.style.setProperty('--font-size', `${currentFontSize}px`);
+  configuredShell = (config.shell as string) || '/bin/zsh';
   if (config.font_family) {
     document.documentElement.style.setProperty('--font-family', `'${config.font_family}', monospace`);
   }
