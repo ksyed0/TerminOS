@@ -103,12 +103,12 @@ async function createTab(makeSplit = false): Promise<string> {
 
   // xterm.js
   const terminal = new Terminal({
-    fontFamily: currentScheme.bg === '#ffffff' || currentScheme.bg === '#fdf6e3'
-      ? `'JetBrains Mono', monospace` : `'JetBrains Mono', monospace`,
+    fontFamily: `'JetBrains Mono', monospace`,
     fontSize: currentFontSize,
     theme: toXtermTheme(currentScheme),
     cursorBlink: true,
     allowTransparency: false,
+    scrollback: 1000,
   });
   const fitAddon = new FitAddon();
   terminal.loadAddon(fitAddon);
@@ -127,6 +127,8 @@ async function createTab(makeSplit = false): Promise<string> {
   }
 
   terminal.open(paneEl);
+  // Test hook — expose active terminal for e2e scrollback assertion
+  (window as any).__activeTerminal = terminal;
 
   const tab: Tab = { id, terminal, fitAddon, paneEl, tabEl, title };
   tabs.set(id, tab);
@@ -170,6 +172,7 @@ function activateTab(id: string): void {
   });
 
   activeTabId = id;
+  (window as any).__activeTerminal = tabs.get(id)?.terminal ?? null;
   tab.terminal.focus();
 }
 

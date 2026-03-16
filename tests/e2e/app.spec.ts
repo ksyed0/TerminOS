@@ -82,3 +82,26 @@ test('PTY round-trip: echo hello_e2e produces output', async () => {
   );
   expect(output).toContain('hello_e2e');
 });
+
+// ── Test 4: AC-0005 — scrollback buffer retains ≥1000 lines ──────────────
+test('scrollback buffer retains at least 1000 lines', async () => {
+  // seq 1 1100 generates 1100 lines of output — exceeds the default 500-line buffer.
+  await page.keyboard.type('seq 1 1100');
+  await page.keyboard.press('Enter');
+
+  // Wait until PTY output contains the last line number
+  await page.waitForFunction(
+    () =>
+      typeof (window as any).__e2eOutput === 'string' &&
+      (window as any).__e2eOutput.includes('1100'),
+    { timeout: 15_000 }
+  );
+
+  // Verify xterm.js buffer holds ≥1000 lines via the test hook
+  const bufferLength = await page.evaluate(() => {
+    const term = (window as any).__activeTerminal;
+    return term ? term.buffer.active.length : 0;
+  });
+
+  expect(bufferLength).toBeGreaterThanOrEqual(1000);
+});

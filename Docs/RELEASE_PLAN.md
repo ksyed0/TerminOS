@@ -41,15 +41,15 @@ Description: Electron app with an embedded terminal pane connected to a PTY (nod
 
 Priority: High
 Estimate: L
-Status: In Progress
-Branch: claude/phase2-provider-handshake
+Status: Done
+Branch: claude/us-0001-ac0005-scrollback
 
 Acceptance Criteria:
-  - [ ] AC-0001: App launches and displays a terminal pane
-  - [ ] AC-0002: PTY connects to the user's configured shell on startup
-  - [ ] AC-0003: User can type and execute shell commands directly
-  - [ ] AC-0004: stdout and stderr render correctly including ANSI colour codes
-  - [ ] AC-0005: Scrollback buffer retains at least 1000 lines
+  - [x] AC-0001: App launches and displays a terminal pane
+  - [x] AC-0002: PTY connects to the user's configured shell on startup
+  - [x] AC-0003: User can type and execute shell commands directly
+  - [x] AC-0004: stdout and stderr render correctly including ANSI colour codes
+  - [x] AC-0005: Scrollback buffer retains at least 1000 lines
 
 Dependencies: None
 
@@ -67,6 +67,9 @@ Definition of Done (DOD):
   - [ ] Accessibility audit passed (WCAG 2.1 AA)
   - [ ] Performance: keystroke → display latency < 16ms verified
   - [ ] Session Close Protocol completed
+
+Tasks:
+  TASK-0013: Fix AC-0005 scrollback buffer; verify and close US-0001
 ```
 
 ---
