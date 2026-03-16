@@ -27,6 +27,7 @@ interface Tab {
   paneEl: HTMLElement;
   tabEl: HTMLElement;
   title: string;
+  onOutputDispose: (() => void) | null;
 }
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -130,13 +131,13 @@ async function createTab(makeSplit = false): Promise<string> {
 
   terminal.open(paneEl);
 
-  const tab: Tab = { id, terminal, fitAddon, paneEl, tabEl, title };
-  tabs.set(id, tab);
-
   // Forward PTY output
-  window.terminalAPI.onOutput((tabId, data) => {
+  const onOutputDispose = window.terminalAPI.onOutput((tabId, data) => {
     if (tabId === id) terminal.write(data);
   });
+
+  const tab: Tab = { id, terminal, fitAddon, paneEl, tabEl, title, onOutputDispose };
+  tabs.set(id, tab);
 
   // Forward keystrokes
   terminal.onData((data) => {
@@ -156,14 +157,15 @@ function activateTab(id: string): void {
   const tab = tabs.get(id);
   if (!tab) return;
 
+  const prevActiveId = activeTabId;
   tabs.forEach((t, tid) => {
     const isSplit = splitTabId === tid && tid !== id;
-    t.paneEl.style.display = (tid === id || (splitTabId && tid === splitTabId && id === activeTabId)) ? '' : 'none';
+    t.paneEl.style.display = (tid === id || (splitTabId && tid === splitTabId && id === prevActiveId)) ? '' : 'none';
     t.tabEl.setAttribute('aria-selected', tid === id ? 'true' : 'false');
     t.tabEl.classList.toggle('active', tid === id);
     // In split mode keep both visible
     if (splitTabId) {
-      const otherSplitId = id === activeTabId ? splitTabId : activeTabId;
+      const otherSplitId = id === prevActiveId ? splitTabId : prevActiveId;
       if (otherSplitId) {
         const other = tabs.get(otherSplitId!);
         if (other) other.paneEl.style.display = '';
@@ -181,6 +183,7 @@ async function closeTabById(id: string): Promise<void> {
 
   await window.terminalAPI.closeTerminal(id);
   tab.terminal.dispose();
+  tab.onOutputDispose?.();
   tab.paneEl.remove();
   tab.tabEl.remove();
   tabs.delete(id);
@@ -300,6 +303,10 @@ async function submitAIRequest(): Promise<void> {
   let result: unknown;
   try {
     result = await window.terminalAPI.interpret(request);
+  } catch (err) {
+    const tab = tabs.get(activeTabId);
+    tab?.terminal.writeln(`\r\n\x1b[31m[AI Error] ${(err as Error).message}\x1b[0m\r\n`);
+    return;
   } finally {
     aiInput.disabled = false;
     aiSubmitBtn.disabled = false;
@@ -312,7 +319,7 @@ async function submitAIRequest(): Promise<void> {
   if ('error' in res) {
     // Show error in active terminal
     const tab = tabs.get(activeTabId);
-    tab?.terminal.writeln(`\r\n\x1b[31m[AI Error] ${res.message}\x1b[0m\r\n`);
+    tab?.terminal.writeln(`\r\n\x1b[31m[AI Error] ${res.message ?? res.error}\x1b[0m\r\n`);
     return;
   }
 
@@ -468,7 +475,7 @@ async function init(): Promise<void> {
 
   currentFontSize = (config.font_size as number) ?? 14;
   document.documentElement.style.setProperty('--font-size', `${currentFontSize}px`);
-  configuredShell = (config.shell as string) || '/bin/zsh';
+  configuredShell = (config.shell as string) ?? '/bin/zsh';
   if (config.font_family) {
     document.documentElement.style.setProperty('--font-family', `'${config.font_family}', monospace`);
   }
