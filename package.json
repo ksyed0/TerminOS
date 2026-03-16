@@ -16,7 +16,9 @@
     "dist": "npm run build && electron-builder",
     "dist:mac": "npm run build && electron-builder --mac",
     "dist:win": "npm run build && electron-builder --win",
-    "dist:linux": "npm run build && electron-builder --linux"
+    "dist:linux": "npm run build && electron-builder --linux",
+    "verify:providers": "node tools/verify-providers.js",
+    "test:providers": "jest --testPathPatterns=\"tests/unit/(claude|openai|ollama)-provider|http-client\""
   },
   "devDependencies": {
     "@eslint/js": "9.39.4",

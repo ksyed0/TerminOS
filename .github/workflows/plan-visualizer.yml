@@ -45,12 +45,16 @@ jobs:
           CI: true
 
       - name: Generate plan-status.html
-        run: node tools/generate-plan.js
+        run: |
+          node tools/generate-plan.js
+          mkdir -p _site
+          cp plan-status.html _site/index.html
+          cp plan-status.json _site/plan-status.json 2>/dev/null || true
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        uses: actions/upload-pages-artifact@v3
         with:
-          path: ./Docs
+          path: ./_site
 
       - name: Deploy to GitHub Pages
         id: deployment

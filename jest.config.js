@@ -9,6 +9,7 @@ module.exports = {
   collectCoverageFrom: [
     // Tools (plain JS utilities)
     'tools/lib/**/*.js',
+    'tools/providers/**/*.js',
     // Compiled TypeScript src — testable modules only
     // (Electron entry, preload context-bridge, renderer DOM, and IPC handlers
     //  require a full Electron/browser environment and are excluded here)

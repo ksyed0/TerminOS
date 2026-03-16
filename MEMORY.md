@@ -37,11 +37,22 @@
 
 All AI providers must implement a common interface — no provider-specific logic outside `tools/providers/`. Ensures providers are swappable with zero impact on the rest of the system.
 
-Methods (to be formally defined in `architecture/`):
-- `interpret(request: AIRequest): Promise<AIResponse>`
-- `testConnection(): Promise<boolean>`
+Implemented in `tools/providers/`:
+- `provider-interface.js` — abstract base, `IntegrationError`, `ValidationError`, validators
+- `http-client.js` — thin `https`/`http` wrapper; single mockable boundary for tests
+- `claude-provider.js` — Anthropic Messages API (`claude-3-5-haiku-20241022`)
+- `openai-provider.js` — OpenAI Chat Completions API (`gpt-4o-mini`, `json_object` mode)
+- `ollama-provider.js` — Ollama `/api/generate` + `/api/tags` ping (`llama3`, localhost)
 
-Providers: `ClaudeProvider`, `OpenAIProvider`, `OllamaProvider`
+Methods:
+- `interpret(request: AIRequest): Promise<AIResponse>` — natural language → `{ command, explanation, riskLevel }`
+- `testConnection(): Promise<boolean>` — connectivity check; never throws
+
+Error taxonomy:
+- `ValidationError` — HTTP 200 but malformed/invalid response body; never retried
+- `IntegrationError` — connectivity failure; retried 3 times (1s/2s/4s) on 429/529/5xx/network
+
+Retry config: 3 retries (4 total attempts), backoff 1s/2s/4s (per MEMORY.md Retry Parameters)
 
 ---
 
@@ -70,6 +81,7 @@ Providers: `ClaudeProvider`, `OpenAIProvider`, `OllamaProvider`
 
 | Package | Version | Purpose | Licence |
 |---------|---------|---------|---------|
+| dotenv | 16.5.0 | Load `.env` for dev-time CLI tools (`verify-providers.js`) | MIT |
 | electron | 41.0.2 | Cross-platform desktop shell | MIT |
 | @anthropic-ai/sdk | 0.39.0 | Claude API provider | MIT |
 | openai | 4.97.0 | OpenAI API provider | MIT |

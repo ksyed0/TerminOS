@@ -18,7 +18,7 @@
 | `xterm` | 5.3.0 | Terminal emulator rendered in DOM canvas | MIT | Renderer only; ANSI/VT100/256-color supported; xterm@5.5.0 not available (notarget) |
 | `xterm-addon-fit` | 0.8.0 | Auto-calculates cols/rows from container dimensions | MIT | fit() called before spawn and on every resize event |
 | `node-fetch` | 3.3.2 | ESM-compatible fetch polyfill (Node < 18 fallback) | MIT | Ollama provider uses native fetch(); node-fetch reserved for future use |
-| `dotenv` | 16.5.0 | `.env` file loader for local development and handshake scripts | BSD-2-Clause | Never loaded in production Electron build; dev/tool use only |
+| `dotenv` | 16.5.0 | `.env` file loader for local development and handshake scripts | MIT | Used by `verify-providers.js` only; never loaded in production Electron build |
 | `electron-log` | 5.3.4 | Structured logging for Electron (writes to OS app log dir) | MIT | Replaces console.log in production; INFO level default |
 
 ### Dev Dependencies
@@ -29,7 +29,7 @@
 | `ts-node` | 10.9.2 | On-demand TypeScript execution (scripts, REPL) | MIT | Used for development scripts; not in test pipeline |
 | `@types/node` | 22.15.3 | Node.js type definitions | MIT | Aligned with Node 22 LTS |
 | `@types/electron` | 1.6.10 | Electron type stubs | MIT | Supplemental; primary types come from electron package |
-| `jest` | 30.3.0 | Unit test runner | MIT | testMatch: `tests/unit/**/*.test.js`; 165 tests passing |
+| `jest` | 30.3.0 | Unit test runner | MIT | testMatch: `tests/unit/**/*.test.js`; 199 tests passing |
 | `eslint` | 10.0.3 | JavaScript/TypeScript linter | MIT | Flat config format (eslint.config.js) |
 | `@eslint/js` | 9.39.4 | ESLint core JS ruleset | MIT | Companion to eslint@10 flat config |
 
@@ -57,6 +57,11 @@
 - Affects `electron < 33.4.4` — ASAR integrity check bypass allows malicious file replacement.
 - Fixed in Electron 33.4.4+. We use 41.0.2 (fully covered).
 - Residual `npm audit` warning on `yauzl` (used by `@electron/get` download tooling) is a false positive: yauzl is not included in the packaged Electron app binary and is not reachable at runtime.
+
+**Discovery: `tools/providers/` handshake layer uses built-in http/https (no SDK)**
+- `http-client.js` wraps Node's built-in `https`/`http` modules — zero new deps for the handshake tools layer.
+- Providers in `tools/providers/` use constructor-injected config (no dotenv). Only `verify-providers.js` loads dotenv.
+- `ValidationError` is thrown for HTTP-200-but-bad-JSON; `IntegrationError` for transport failures. Only the latter is retried.
 
 ---
 
