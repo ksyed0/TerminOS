@@ -173,28 +173,45 @@ describe('ai:interpret handler', () => {
     expect(result.error).toBe('E_AI_INVALID_JSON');
     expect(result.retryable).toBe(true);
   });
+
+  test('returns E_AI_TIMEOUT with retryable: true when provider hangs past timeout', async () => {
+    jest.useFakeTimers();
+    mockInterpret.mockImplementation(() => new Promise(() => {})); // never resolves
+
+    const resultPromise = handlerRegistry['ai:interpret'](MOCK_EVENT, BASE_REQUEST);
+    await jest.advanceTimersByTimeAsync(31000);
+    const result = await resultPromise;
+
+    expect(result.error).toBe('E_AI_TIMEOUT');
+    expect(result.retryable).toBe(true);
+    jest.useRealTimers();
+  });
 });
 
 // ── ai:execute tests ──────────────────────────────────────────────────────────
 describe('ai:execute handler', () => {
   const EXEC_TAB_ID = 'tab-exec-1';
 
-  beforeAll(() => {
-    // Spawn a PTY for EXEC_TAB_ID so ai:execute can find it
+  beforeEach(() => {
+    // Spawn a fresh PTY after clearAllMocks() has already run (outer beforeEach)
     handlerRegistry['terminal:spawn'](MOCK_EVENT, { tabId: EXEC_TAB_ID, cols: 80, rows: 24 });
+  });
+
+  afterEach(() => {
+    handlerRegistry['terminal:close'](MOCK_EVENT, { tabId: EXEC_TAB_ID });
+  });
+
+  test('mockPtyOnData is called exactly once when PTY is spawned for this test', () => {
+    expect(mockPtyOnData).toHaveBeenCalledTimes(1);
   });
 
   test('writes command + \\r to the correct PTY for the given tabId', () => {
     handlerRegistry['ai:execute'](MOCK_EVENT, { tabId: EXEC_TAB_ID, command: 'ls ~/Downloads' });
-
     expect(mockPtyWrite).toHaveBeenCalledWith('ls ~/Downloads\r');
   });
 
   test('returns E_PTY_SPAWN error when no PTY exists for the tabId', () => {
     const result = handlerRegistry['ai:execute'](MOCK_EVENT, { tabId: 'tab-nonexistent-99', command: 'ls' });
-
-    expect(result).toEqual(
-      expect.objectContaining({ error: 'E_PTY_SPAWN' })
-    );
+    expect(result).toEqual(expect.objectContaining({ error: 'E_PTY_SPAWN' }));
   });
 });
