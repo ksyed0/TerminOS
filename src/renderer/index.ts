@@ -400,12 +400,20 @@ function buildSchemeGrid(container: HTMLElement, schemes: ColorScheme[], selecte
       applyScheme(scheme);
       applyThemeToTerminals();
     });
+    btn.addEventListener('mouseenter', () => {
+      applyScheme(scheme);
+      applyThemeToTerminals(scheme);
+    });
+    btn.addEventListener('mouseleave', () => {
+      applyScheme(currentScheme);
+      applyThemeToTerminals();
+    });
     container.appendChild(btn);
   });
 }
 
-function applyThemeToTerminals(): void {
-  const xtermTheme = toXtermTheme(currentScheme);
+function applyThemeToTerminals(override?: ColorScheme): void {
+  const xtermTheme = toXtermTheme(override ?? currentScheme);
   tabs.forEach((tab) => { tab.terminal.options.theme = xtermTheme; });
 }
 
