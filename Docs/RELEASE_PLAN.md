@@ -86,30 +86,31 @@ Description: AI input bar (always visible) accepts natural language. On submit, 
 
 Priority: High
 Estimate: L
-Status: In Progress
+Status: Done
+Branch: feature/US-0002-ai-nl-command-interpret
 
 Acceptance Criteria:
-  - [ ] AC-0006: AI input bar is visible and accessible at all times
-  - [ ] AC-0007: Submitting natural language sends request to configured AI provider
-  - [ ] AC-0008: AI response renders as a command preview card showing: command, explanation, risk badge
-  - [ ] AC-0009: Command is NOT executed until user explicitly approves
-  - [ ] AC-0010: AI response latency (p95) < 2 seconds on standard connection
-  - [ ] AC-0011: Error shown clearly if AI provider is unreachable or returns an error
+  - [x] AC-0006: AI input bar is visible and accessible at all times
+  - [x] AC-0007: Submitting natural language sends request to configured AI provider
+  - [x] AC-0008: AI response renders as a command preview card showing: command, explanation, risk badge
+  - [x] AC-0009: Command is NOT executed until user explicitly approves
+  - [x] AC-0010: AI response latency (p95) < 2 seconds on standard connection
+  - [x] AC-0011: Error shown clearly if AI provider is unreachable or returns an error
 
 Dependencies: US-0001 (PTY integration), US-0005 (provider configuration)
 
 Definition of Ready (DOR):
-  - [ ] Story is understood and estimated
-  - [ ] Acceptance criteria are defined and agreed
-  - [ ] ProviderInterface designed and documented in architecture/
-  - [ ] No blockers exist to begin work
+  - [x] Story is understood and estimated
+  - [x] Acceptance criteria are defined and agreed
+  - [x] ProviderInterface designed and documented in architecture/
+  - [x] No blockers exist to begin work
 
 Definition of Done (DOD):
-  - [ ] All AC above are met
-  - [ ] Unit tests written and passing with ≥80% coverage
-  - [ ] Test cases created in TEST_CASES.md
-  - [ ] ProviderInterface documented in architecture/
-  - [ ] Session Close Protocol completed
+  - [x] All AC above are met
+  - [x] Unit tests written and passing with ≥80% coverage
+  - [x] Test cases created in TEST_CASES.md
+  - [x] ProviderInterface documented in architecture/
+  - [x] Session Close Protocol completed
 ```
 
 ```
@@ -154,23 +155,24 @@ Description: After AI interpretation (US-0002), display a command preview card w
 
 Priority: High
 Estimate: M
-Status: Planned
+Status: Done
+Branch: feature/US-0003-command-preview
 
 Acceptance Criteria:
-  - [ ] AC-0012: Command preview card appears after every AI interpretation
-  - [ ] AC-0013: Card displays: command text, explanation, risk badge with colour + text label
-  - [ ] AC-0014: "Approve" executes the command via PTY
-  - [ ] AC-0015: "Edit" makes the command text editable before execution
-  - [ ] AC-0016: "Cancel" dismisses the card without executing anything
-  - [ ] AC-0017: Risk badge never uses colour as the sole indicator — always pairs with text
+  - [x] AC-0012: Command preview card appears after every AI interpretation
+  - [x] AC-0013: Card displays: command text, explanation, risk badge with colour + text label
+  - [x] AC-0014: "Approve" executes the command via PTY
+  - [x] AC-0015: "Edit" makes the command text editable before execution
+  - [x] AC-0016: "Cancel" dismisses the card without executing anything
+  - [x] AC-0017: Risk badge never uses colour as the sole indicator — always pairs with text
 
 Dependencies: US-0002
 
 Definition of Done (DOD):
-  - [ ] All AC above are met
-  - [ ] Accessibility audit: risk state communicated without colour alone
-  - [ ] Keyboard navigation: all three actions (Approve/Edit/Cancel) operable via keyboard
-  - [ ] Session Close Protocol completed
+  - [x] All AC above are met
+  - [x] Accessibility audit: risk state communicated without colour alone
+  - [x] Keyboard navigation: all three actions (Approve/Edit/Cancel) operable via keyboard
+  - [x] Session Close Protocol completed
 ```
 
 ---
@@ -221,23 +223,24 @@ Description: Provider selector UI (accessible from startup wizard and settings p
 
 Priority: High
 Estimate: M
-Status: Planned
+Status: Done
+Branch: feature/US-0005-provider-config-ui
 
 Acceptance Criteria:
-  - [ ] AC-0023: User can select AI provider: Claude, OpenAI, or Ollama
-  - [ ] AC-0024: API key input field masks the key (password field)
-  - [ ] AC-0025: API key is stored in OS keychain — never written to disk in plaintext
-  - [ ] AC-0026: "Test connection" button confirms the key and model are valid before saving
-  - [ ] AC-0027: Ollama option shows a host URL field (default: http://localhost:11434)
-  - [ ] AC-0028: Provider config persists across app restarts
+  - [x] AC-0023: User can select AI provider: Claude, OpenAI, or Ollama
+  - [x] AC-0024: API key input field masks the key (password field)
+  - [x] AC-0025: API key is stored in OS keychain — never written to disk in plaintext
+  - [x] AC-0026: "Test connection" button confirms the key and model are valid before saving
+  - [x] AC-0027: Ollama option shows a host URL field (default: http://localhost:11434)
+  - [x] AC-0028: Provider config persists across app restarts
 
 Dependencies: None (can be developed in parallel with US-0001)
 
 Definition of Done (DOD):
-  - [ ] All AC above are met
-  - [ ] Security review: confirm no API key appears in logs, `.tmp/`, or config files
-  - [ ] keytar dependency pinned and documented in findings.md
-  - [ ] Session Close Protocol completed
+  - [x] All AC above are met
+  - [x] Security review: confirm no API key appears in logs, `.tmp/`, or config files
+  - [x] keytar dependency pinned and documented in findings.md
+  - [x] Session Close Protocol completed
 ```
 
 ---
@@ -256,25 +259,26 @@ Description: On first launch, display a theme picker before the terminal is show
 
 Priority: High
 Estimate: M
-Status: Planned
+Status: Done
+Branch: feature/US-0006-theme-selector
 
 Acceptance Criteria:
-  - [ ] AC-0029: Theme picker appears on first launch before terminal is displayed
-  - [ ] AC-0030: User can select Dark, Light, or Auto mode
-  - [ ] AC-0031: Selecting a mode shows the curated color schemes for that mode
-  - [ ] AC-0032: Live preview updates as the user hovers over schemes
-  - [ ] AC-0033: Selected theme persists to config and applies on next launch
-  - [ ] AC-0034: "Auto" mode responds to OS dark/light mode changes at runtime (< 100ms)
-  - [ ] AC-0035: Theme picker is accessible from the Settings menu at any time
-  - [ ] AC-0036: All scheme color pairs validated against WCAG 2.1 AA contrast ratios
+  - [x] AC-0029: Theme picker appears on first launch before terminal is displayed
+  - [x] AC-0030: User can select Dark, Light, or Auto mode
+  - [x] AC-0031: Selecting a mode shows the curated color schemes for that mode
+  - [x] AC-0032: Live preview updates as the user hovers over schemes
+  - [x] AC-0033: Selected theme persists to config and applies on next launch
+  - [x] AC-0034: "Auto" mode responds to OS dark/light mode changes at runtime (< 100ms)
+  - [x] AC-0035: Theme picker is accessible from the Settings menu at any time
+  - [x] AC-0036: All scheme color pairs validated against WCAG 2.1 AA contrast ratios
 
 Dependencies: None
 
 Definition of Done (DOD):
-  - [ ] All AC above are met
-  - [ ] All 12 color schemes (7 dark + 5 light) implemented and contrast-validated
-  - [ ] Contrast audit results logged in findings.md
-  - [ ] Session Close Protocol completed
+  - [x] All AC above are met
+  - [x] All 12 color schemes (7 dark + 5 light) implemented and contrast-validated
+  - [x] Contrast audit results logged in findings.md
+  - [x] Session Close Protocol completed
 ```
 
 ---
@@ -475,24 +479,25 @@ Description: Two display modes:
 
 Priority: High
 Estimate: L
-Status: Planned
+Status: Done
+Branch: feature/US-0010-multi-tab
 Dependencies: US-0001
 
 Acceptance Criteria:
-  - [ ] AC-0037: User can open multiple terminal tabs via keyboard shortcut and tab bar button
-  - [ ] AC-0038: Full-window mode: clicking a tab switches the full window to that tab's PTY
-  - [ ] AC-0039: Splitter mode: user can split the window horizontally or vertically
-  - [ ] AC-0040: Splitter dividers are draggable to adjust pane widths/heights
-  - [ ] AC-0041: Each tab/pane maintains its own independent PTY session and working directory
-  - [ ] AC-0042: Tabs can be closed (with confirmation if a command is running)
-  - [ ] AC-0043: Tabs can be reordered by dragging in the tab bar
-  - [ ] AC-0044: Keyboard shortcut to switch between tabs (Cmd+1–9 / Ctrl+1–9)
-  - [ ] AC-0045: Mode toggle (splitter ↔ full-window) accessible from tab bar or keyboard shortcut
+  - [x] AC-0037: User can open multiple terminal tabs via keyboard shortcut and tab bar button
+  - [x] AC-0038: Full-window mode: clicking a tab switches the full window to that tab's PTY
+  - [x] AC-0039: Splitter mode: user can split the window horizontally or vertically
+  - [x] AC-0040: Splitter dividers are draggable to adjust pane widths/heights
+  - [x] AC-0041: Each tab/pane maintains its own independent PTY session and working directory
+  - [x] AC-0042: Tabs can be closed (with confirmation if a command is running)
+  - [x] AC-0043: Tabs can be reordered by dragging in the tab bar
+  - [x] AC-0044: Keyboard shortcut to switch between tabs (Cmd+1–9 / Ctrl+1–9)
+  - [x] AC-0045: Mode toggle (splitter ↔ full-window) accessible from tab bar or keyboard shortcut
 
 Definition of Done (DOD):
-  - [ ] All AC above are met
-  - [ ] Splitter minimum pane width enforced (no pane smaller than 200px)
-  - [ ] Session Close Protocol completed
+  - [x] All AC above are met
+  - [x] Splitter minimum pane width enforced (no pane smaller than 200px)
+  - [x] Session Close Protocol completed
 ```
 
 ---
