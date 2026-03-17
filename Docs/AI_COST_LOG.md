@@ -52,3 +52,4 @@ Updated automatically by the Claude Code stop hook (`tools/capture-cost.js`).
 | 2026-03-16 | 5793a010-c199-4462-af12-cabb0fa9de3e | feature/US-0002-ai-nl-command-interpret | 0 | 0 | 0 | 0.0000 |
 | 2026-03-16 | 5793a010-c199-4462-af12-cabb0fa9de3e | feature/US-0002-ai-nl-command-interpret | 0 | 0 | 0 | 0.0000 |
 | 2026-03-17 | 60d35641-5896-473a-ac9f-ccdde8595515 | feature/US-0002-ai-nl-command-interpret | 0 | 0 | 0 | 0.0000 |
+| 2026-03-17 | 60d35641-5896-473a-ac9f-ccdde8595515 | feature/US-0002-ai-nl-command-interpret | 0 | 0 | 0 | 0.0000 |
