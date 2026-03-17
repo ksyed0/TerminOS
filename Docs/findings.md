@@ -1,3 +1,5 @@
+# Findings
+
 ## WCAG AA Contrast Audit (US-0006, 2026-03-17)
 
 | Scheme | fg/bg ratio | fg/bg2 ratio | Passes 4.5:1? |
