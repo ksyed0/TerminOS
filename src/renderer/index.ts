@@ -401,6 +401,24 @@ function setupModeButtons(container: HTMLElement, mode: 'dark' | 'light' | 'auto
 }
 
 // ── Settings panel ──────────────────────────────────────────────────────────────
+
+/** Show/hide provider-specific fields based on selected provider. */
+function applyProviderVisibility(provider: string): void {
+  const isOllama = provider === 'ollama';
+  // Ollama host row
+  ollamaHostInput.setAttribute('aria-hidden', String(!isOllama));
+  ollamaHostInput.disabled = !isOllama;
+  (ollamaHostInput as HTMLElement).style.display = isOllama ? '' : 'none';
+  // API key row
+  apiKeyInput.setAttribute('aria-hidden', String(isOllama));
+  apiKeyInput.disabled = isOllama;
+  (apiKeyInput as HTMLElement).style.display = isOllama ? 'none' : '';
+}
+
+providerSelect.addEventListener('change', () => {
+  applyProviderVisibility(providerSelect.value);
+});
+
 settingsBtn.addEventListener('click', () => {
   settingsPanel.classList.toggle('hidden');
 });
@@ -412,6 +430,14 @@ settingsCloseBtn.addEventListener('click', () => {
 testConnectionBtn.addEventListener('click', async () => {
   connectionStatus.textContent = 'Testing…';
   connectionStatus.className = 'connection-status';
+  // Save current form values before testing so testConnection uses up-to-date config
+  const partial: Record<string, unknown> = {
+    provider: providerSelect.value,
+    model: modelInput.value || undefined,
+    ollama_host: ollamaHostInput.value || null,
+  };
+  if (apiKeyInput.value) partial.api_key = apiKeyInput.value;
+  await window.terminalAPI.setConfig(partial);
   const result = await window.terminalAPI.testConnection() as Record<string, unknown>;
   if (result.ok) {
     connectionStatus.textContent = `✓ Connected — ${result.provider} / ${result.model} (${result.latency_ms}ms)`;
@@ -460,6 +486,7 @@ async function init(): Promise<void> {
   modelInput.value = (config.model as string) ?? '';
   ollamaHostInput.value = (config.ollama_host as string) ?? '';
   shellInput.value = (config.shell as string) ?? '';
+  applyProviderVisibility(providerSelect.value);
   fontFamilyInput.value = (config.font_family as string) ?? 'JetBrains Mono';
   fontSizeInput.value = String(currentFontSize);
 
