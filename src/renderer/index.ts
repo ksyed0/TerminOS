@@ -14,6 +14,12 @@ import {
   type ColorScheme,
 } from './theme';
 
+import {
+  showPreview as _showPreview, hidePreview, enterEditMode, exitEditMode,
+  getEditedCommand, getPendingCommand, isEditMode,
+  type PreviewRefs, type PreviewResponse,
+} from './preview';
+
 // ── Globals injected by preload ───────────────────────────────────────────────
 declare const window: Window & {
   terminalAPI: import('../preload/index').TerminalAPI;
@@ -51,7 +57,9 @@ const previewExp     = document.getElementById('preview-explanation')!;
 const riskBadge      = document.getElementById('risk-badge')!;
 const confirmDialog  = document.getElementById('confirm-dialog')!;
 const previewRunBtn  = document.getElementById('preview-run-btn')!;
+const previewEditBtn  = document.getElementById('preview-edit-btn')!;
 const previewCancelBtn = document.getElementById('preview-cancel-btn')!;
+const previewEditInput = document.getElementById('preview-edit-input') as HTMLTextAreaElement;
 const themeOverlay   = document.getElementById('theme-overlay')!;
 const themeApplyBtn  = document.getElementById('theme-apply-btn')!;
 const schemeGrid     = document.getElementById('scheme-grid')!;
@@ -68,6 +76,11 @@ const connectionStatus  = document.getElementById('connection-status')!;
 const shellInput      = document.getElementById('shell-input') as HTMLInputElement;
 const fontFamilyInput = document.getElementById('font-family-input') as HTMLInputElement;
 const fontSizeInput   = document.getElementById('font-size-input') as HTMLInputElement;
+
+// ── Preview refs ───────────────────────────────────────────────────────────────
+const previewRefs: PreviewRefs = {
+  previewCard, previewCmd, previewExp, riskBadge, confirmDialog, previewEditInput,
+};
 
 // ── ID generation ──────────────────────────────────────────────────────────────
 let _tabCounter = 0;
@@ -272,8 +285,6 @@ const resizeObserver = new ResizeObserver(() => fitAllTerminals());
 resizeObserver.observe(paneContainer);
 
 // ── AI Input ───────────────────────────────────────────────────────────────────
-let pendingCommand: { command: string; risk: string } | null = null;
-
 async function submitAIRequest(): Promise<void> {
   const input = aiInput.value.trim();
   if (!input || !activeTabId) return;
@@ -309,39 +320,37 @@ async function submitAIRequest(): Promise<void> {
   }
 
   // Show preview card
-  showPreview(res as { command: string; explanation: string; is_destructive: boolean; requires_confirmation: boolean; risk_level: string });
+  showPreview(res as unknown as PreviewResponse);
 }
 
-function showPreview(response: {
-  command: string; explanation: string;
-  is_destructive: boolean; requires_confirmation: boolean; risk_level: string;
-}): void {
-  previewCmd.textContent = response.command;
-  previewExp.textContent = response.explanation;
-
-  riskBadge.textContent = response.risk_level;
-  riskBadge.className = `risk-badge ${response.risk_level}`;
-
-  confirmDialog.classList.toggle('hidden', !response.requires_confirmation);
-  pendingCommand = { command: response.command, risk: response.risk_level };
-
-  previewCard.classList.remove('hidden');
+function showPreview(response: PreviewResponse): void {
+  _showPreview(previewRefs, response);
   previewRunBtn.focus();
 }
 
 previewRunBtn.addEventListener('click', () => {
-  if (!pendingCommand || !activeTabId) return;
-  window.terminalAPI.executeCommand(activeTabId, pendingCommand.command);
-  previewCard.classList.add('hidden');
-  pendingCommand = null;
+  const cmd = isEditMode() ? getEditedCommand(previewRefs) : getPendingCommand()?.command;
+  if (!cmd || !activeTabId) return;
+  hidePreview(previewRefs);
+  window.terminalAPI.executeCommand(activeTabId, cmd);
   const tab = tabs.get(activeTabId);
   tab?.terminal.focus();
 });
 
+previewEditBtn.addEventListener('click', () => {
+  enterEditMode(previewRefs);
+});
+
 previewCancelBtn.addEventListener('click', () => {
-  previewCard.classList.add('hidden');
-  pendingCommand = null;
+  hidePreview(previewRefs);
   aiInput.focus();
+});
+
+previewCard.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    hidePreview(previewRefs);
+    aiInput.focus();
+  }
 });
 
 aiSubmitBtn.addEventListener('click', submitAIRequest);

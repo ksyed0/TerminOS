@@ -30,13 +30,15 @@
       <span id="risk-badge" class="risk-badge" aria-live="polite"></span>
     </div>
     <pre id="preview-command" class="preview-command" aria-label="Command to execute"></pre>
+    <textarea id="preview-edit-input" class="preview-edit-input hidden" aria-label="Edit command"></textarea>
     <p id="preview-explanation" class="preview-explanation"></p>
     <div id="confirm-dialog" class="confirm-dialog hidden">
       <p class="confirm-warning">⚠ This command may be destructive. Are you sure?</p>
     </div>
     <div class="preview-actions">
-      <button id="preview-run-btn" class="primary-btn">Run</button>
-      <button id="preview-cancel-btn" class="secondary-btn">Cancel</button>
+      <button id="preview-run-btn" class="primary-btn" tabindex="0">Run</button>
+      <button id="preview-edit-btn" class="secondary-btn" tabindex="1">Edit</button>
+      <button id="preview-cancel-btn" class="secondary-btn" tabindex="2">Cancel</button>
     </div>
   </div>
 
