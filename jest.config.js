@@ -24,6 +24,7 @@ module.exports = {
     'dist/main/pty/manager.js',
     'dist/renderer/theme.js',
     'dist/renderer/preview.js',
+    'dist/renderer/tabs.js',
   ],
   coverageReporters: ['text', 'lcov', 'json-summary'],
   coverageThreshold: {
