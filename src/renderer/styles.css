@@ -433,3 +433,18 @@ html, body {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+
+/* ── Preview edit input ──────────────────────────────────────────────────────── */
+.preview-edit-input {
+  font-family: var(--font-family, 'JetBrains Mono', monospace);
+  font-size: var(--font-size, 14px);
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--bg3);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px;
+  resize: vertical;
+  min-height: 2em;
+}

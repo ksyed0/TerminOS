@@ -23,6 +23,7 @@ module.exports = {
     'dist/main/providers/factory.js',
     'dist/main/pty/manager.js',
     'dist/renderer/theme.js',
+    'dist/renderer/preview.js',
   ],
   coverageReporters: ['text', 'lcov', 'json-summary'],
   coverageThreshold: {
