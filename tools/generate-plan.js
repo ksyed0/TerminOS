@@ -42,6 +42,10 @@ function loadConfig() {
   if (!fs.existsSync(cfgPath)) return DEFAULTS;
   try {
     const raw = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+    const KNOWN_KEYS = ['project', 'docs', 'coverage', 'progress', 'costs'];
+    Object.keys(raw).forEach(k => {
+      if (!KNOWN_KEYS.includes(k)) console.warn(`[generate-plan] Unknown config key: "${k}" — ignored`);
+    });
     return {
       project: { ...DEFAULTS.project, ...raw.project },
       docs: { ...DEFAULTS.docs, ...raw.docs },
@@ -73,6 +77,10 @@ function getCommitSha() {
   try { return execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim(); } catch { return 'unknown'; }
 }
 
+function getBuildNumber() {
+  try { return execSync('git rev-list --count HEAD', { encoding: 'utf8' }).trim(); } catch { return '0'; }
+}
+
 function main() {
   const config = loadConfig();
   const HOURS = config.costs.tshirtHours;
@@ -96,7 +104,7 @@ function main() {
   for (const story of stories) {
     costs[story.id] = {
       projectedUsd: computeProjectedCost(story.estimate, HOURS, RATE),
-      aiCostUsd: aiAttribution[story.id] ? aiAttribution[story.id].costUsd : 0,
+      costUsd: aiAttribution[story.id] ? aiAttribution[story.id].costUsd : 0,
       inputTokens: aiAttribution[story.id] ? aiAttribution[story.id].inputTokens : 0,
       outputTokens: aiAttribution[story.id] ? aiAttribution[story.id].outputTokens : 0,
     };
@@ -106,6 +114,8 @@ function main() {
   const atRisk = detectAtRisk(stories, testCases, bugs);
   const generatedAt = new Date().toISOString();
   const commitSha = getCommitSha();
+  const buildNumber = getBuildNumber();
+  const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
 
   const sessionTimeline = [...costRows]
     .sort((a, b) => a.date.localeCompare(b.date))
@@ -117,9 +127,11 @@ function main() {
 
   const data = {
     epics, stories, tasks, testCases, bugs, costs, atRisk, coverage,
-    recentActivity, generatedAt, commitSha, sessionTimeline,
+    recentActivity, generatedAt, commitSha, buildNumber, sessionTimeline,
     projectName: config.project.name,
     tagline: config.project.tagline,
+    version: pkg.version,
+    githubUrl: config.project.githubUrl ?? '',
   };
 
   const outputDir = path.join(ROOT, config.docs.outputDir);

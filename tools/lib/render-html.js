@@ -28,7 +28,9 @@ function badge(text) {
 
 function usd(n) {
   const num = Number(n);
-  return (num > 0 && num < 1) ? '$' + num.toFixed(2) : '$' + Math.round(num).toLocaleString('en-US');
+  if (num >= 1000) return '$' + Math.round(num).toLocaleString('en-US');
+  if (num > 0) return '$' + num.toFixed(2);
+  return '$0.00';
 }
 function fmtNum(n) { return Number(n).toLocaleString(); }
 
@@ -39,48 +41,37 @@ function renderTopBar(data) {
   const inProgress = data.stories.filter(s => s.status === 'In Progress').length;
   const pct = data.stories.length ? Math.round((done / data.stories.length) * 100) : 0;
   const cov = data.coverage;
-  const linesCovLabel = (cov.available !== false) ? `${cov.overall.toFixed(1)}%` : 'N/A';
-  const linesCovClass = (cov.available !== false) ? (cov.meetsTarget ? 'text-green-400' : 'text-red-400') : 'text-slate-500';
-  const branchCov = cov.branches;
-  const branchLabel = (cov.available !== false) ? `${Number(branchCov).toFixed(1)}%` : 'N/A';
-  const branchClass = (cov.available !== false) ? (branchCov >= 80 ? 'text-green-400' : 'text-red-400') : 'text-slate-500';
+  const covLabel = (cov.available !== false) ? `${cov.overall.toFixed(1)}%` : 'N/A';
+  const covClass = (cov.available !== false) ? (cov.meetsTarget ? 'text-green-400' : 'text-red-400') : 'text-slate-500';
+  const branchSubtitle = (cov.available !== false) ? `Branches: ${Number(cov.branches).toFixed(1)}%` : 'N/A';
   return `
-  <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white px-6 py-5 shadow-lg">
+  <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white px-6 py-5 shadow-lg" id="top-bar">
     <div class="flex flex-wrap gap-4 items-start justify-between">
       <div class="min-w-0">
-        <h1 class="text-3xl font-bold text-blue-400 tracking-tight">${esc(data.projectName)}</h1>
-        <p class="text-slate-400 text-sm mt-0.5">${esc(data.tagline)}&nbsp;·&nbsp;Updated ${data.generatedAt.slice(0,10)}&nbsp;·&nbsp;<code class="text-slate-500 text-xs">${data.commitSha}</code></p>
-        <div class="mt-2.5 flex items-center gap-2">
+        <div class="flex items-center gap-3 flex-wrap">
+          <h1 class="text-3xl font-bold text-blue-400 tracking-tight topbar-title">${esc(data.projectName)}</h1>
+          <button onclick="openAbout()" class="text-xs text-slate-400 border border-slate-600 rounded px-2 py-0.5 hover:border-blue-400 hover:text-blue-400 transition-colors flex-shrink-0">About</button>
+        </div>
+        <p class="text-slate-400 text-sm mt-0.5 topbar-tagline">${esc(data.tagline)}&nbsp;·&nbsp;Updated ${data.generatedAt.slice(0,10)}&nbsp;·&nbsp;<code class="text-slate-500 text-xs">${data.commitSha}</code></p>
+        <div class="mt-2.5 flex items-center gap-2 topbar-progress">
           <div class="bg-slate-700 rounded-full h-2 w-40 overflow-hidden">
             <div class="bg-blue-500 h-2 rounded-full" style="width:${pct}%"></div>
           </div>
-          <span class="text-xs text-slate-400">${done}/${data.stories.length} stories done</span>
+          <span class="text-xs text-slate-400">${done}/${data.stories.length} &middot; ${pct}%${inProgress ? ` &middot; ${inProgress} active` : ''}</span>
         </div>
       </div>
-      <div class="flex gap-3 flex-wrap">
-        <div class="bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-center min-w-[70px]">
-          <div class="text-2xl font-bold text-white">${data.stories.length}</div>
-          <div class="text-xs text-slate-400 mt-0.5">Stories</div>
-        </div>
-        <div class="bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-center min-w-[90px]">
-          <div class="text-2xl font-bold text-white">${pct}%</div>
-          <div class="text-xs text-slate-400 mt-0.5">${done} done · ${inProgress} active</div>
-        </div>
-        <div class="bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-center min-w-[80px]">
-          <div class="text-xl font-bold text-white">${usd(totalProjected)}</div>
+      <div class="flex gap-3 flex-wrap topbar-stats">
+        <div class="bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-center min-w-[80px] topbar-tile">
+          <div class="text-xl font-bold text-white topbar-tile-num">${usd(totalProjected)}</div>
           <div class="text-xs text-slate-400 mt-0.5">Projected</div>
         </div>
-        <div class="bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-center min-w-[80px]">
-          <div class="text-xl font-bold text-white">${usd(totalAI)}</div>
+        <div class="bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-center min-w-[80px] topbar-tile">
+          <div class="text-xl font-bold text-white topbar-tile-num">${usd(totalAI)}</div>
           <div class="text-xs text-slate-400 mt-0.5">AI Actual</div>
         </div>
-        <div class="bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-center min-w-[70px]">
-          <div class="text-2xl font-bold ${linesCovClass}">${linesCovLabel}</div>
-          <div class="text-xs text-slate-400 mt-0.5">Lines Cov</div>
-        </div>
-        <div class="bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-center min-w-[70px]">
-          <div class="text-2xl font-bold ${branchClass}">${branchLabel}</div>
-          <div class="text-xs text-slate-400 mt-0.5">Branch Cov</div>
+        <div class="bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-center min-w-[80px] topbar-tile" aria-label="Coverage: ${covLabel} overall, ${branchSubtitle}">
+          <div class="text-2xl font-bold ${covClass} topbar-tile-num">${covLabel}</div>
+          <div class="text-xs text-slate-400 mt-0.5">${branchSubtitle}</div>
         </div>
       </div>
     </div>
@@ -218,16 +209,19 @@ function renderTraceabilityTab(data) {
   const notRun  = data.testCases.filter(tc => tc.status === 'Not Run').length;
   return `
   <div id="tab-traceability" class="p-6 hidden">
-    <div class="flex gap-6 items-start">
+    <div class="flex gap-6 items-start" id="trace-layout">
       <div class="overflow-x-auto flex-1">
         <table class="border-collapse text-sm">
           <thead><tr><th class="p-2 border border-slate-200 text-xs">Story</th>${headers}</tr></thead>
           <tbody>${rows}</tbody>
         </table>
       </div>
-      <div class="flex-shrink-0 bg-white border border-slate-200 rounded-lg p-4 w-44">
-        <h4 class="text-xs font-semibold text-slate-600 uppercase mb-3">Legend</h4>
-        <div class="space-y-2">
+      <div class="flex-shrink-0 bg-white border border-slate-200 rounded-lg p-4 w-44" id="trace-legend-panel">
+        <button onclick="(function(){var b=document.getElementById('trace-legend-body');var a=document.getElementById('trace-legend-arrow');var hidden=b.classList.toggle('hidden');a.textContent=hidden?'▶':'▼';})()" class="flex items-center justify-between w-full text-left">
+          <h4 class="text-xs font-semibold text-slate-600 uppercase">Legend</h4>
+          <span id="trace-legend-arrow" class="text-xs text-slate-400 ml-2">▼</span>
+        </button>
+        <div id="trace-legend-body" class="space-y-2 mt-3">
           <div class="flex items-center gap-2">
             <span class="w-8 h-6 rounded text-xs font-medium flex items-center justify-center bg-green-100 text-green-800">P</span>
             <span class="text-xs text-slate-600">Pass</span>
@@ -244,13 +238,13 @@ function renderTraceabilityTab(data) {
             <span class="w-8 h-6 rounded border border-slate-200 bg-white"></span>
             <span class="text-xs text-slate-400">Not linked</span>
           </div>
-        </div>
-        <div class="mt-4 pt-3 border-t border-slate-100 space-y-1">
-          <p class="text-xs font-semibold text-slate-500 mb-1">Summary</p>
-          <p class="text-xs text-green-700">${passed} Pass</p>
-          <p class="text-xs text-red-700">${failed} Fail</p>
-          <p class="text-xs text-amber-700">${notRun} Not Run</p>
-          <p class="text-xs text-slate-500 border-t border-slate-100 pt-1 mt-1">${data.testCases.length} Total TCs</p>
+          <div class="mt-4 pt-3 border-t border-slate-100 space-y-1">
+            <p class="text-xs font-semibold text-slate-500 mb-1">Summary</p>
+            <p class="text-xs text-green-700">${passed} Pass</p>
+            <p class="text-xs text-red-700">${failed} Fail</p>
+            <p class="text-xs text-amber-700">${notRun} Not Run</p>
+            <p class="text-xs text-slate-500 border-t border-slate-100 pt-1 mt-1">${data.testCases.length} Total TCs</p>
+          </div>
         </div>
       </div>
     </div>
@@ -336,10 +330,16 @@ function renderChartsTab(data) {
     new Chart(document.getElementById('chart-cost-breakdown'), {
       type: 'bar',
       data: { labels: ${epicLabels}, datasets: [
-        { label: 'Projected ($)', data: ${epicProjected}, backgroundColor: '#f59e0b' },
-        { label: 'AI Cost ($)', data: ${epicAI}, backgroundColor: '#0d9488' },
+        { label: 'Projected ($)', data: ${epicProjected}, backgroundColor: '#f59e0b', yAxisID: 'yProjected' },
+        { label: 'AI Cost ($)', data: ${epicAI}, backgroundColor: '#0d9488', yAxisID: 'yAI' },
       ]},
-      options: { responsive: true }
+      options: {
+        responsive: true,
+        scales: {
+          yProjected: { type: 'linear', position: 'left', title: { display: true, text: 'Projected ($)' } },
+          yAI: { type: 'linear', position: 'right', title: { display: true, text: 'AI Cost ($)' }, grid: { drawOnChartArea: false } }
+        }
+      }
     });
     new Chart(document.getElementById('chart-coverage'), {
       type: 'doughnut',
@@ -383,7 +383,7 @@ function renderCostsTab(data) {
         <td class="px-3 py-2 text-center text-sm">${story.estimate || '?'}</td>
         <td class="px-3 py-2 text-right text-sm">${usd(projected)}</td>
         <td class="px-3 py-2 text-right text-sm text-teal-600">${usd(aiCost)}</td>
-        <td class="px-3 py-2 text-right text-xs text-slate-400">${fmtNum(ai.inputTokens || 0)} / ${fmtNum(ai.outputTokens || 0)}</td>
+        <td class="px-3 py-2 text-right text-xs text-slate-400 tokens-col">${fmtNum(ai.inputTokens || 0)} / ${fmtNum(ai.outputTokens || 0)}</td>
       </tr>`;
     }).join('');
     return `
@@ -395,7 +395,7 @@ function renderCostsTab(data) {
       </td>
       <td class="px-3 py-2 text-right text-sm font-medium">${usd(epicProjected)}</td>
       <td class="px-3 py-2 text-right text-sm font-medium text-teal-600">${usd(epicAI)}</td>
-      <td class="px-3 py-2 text-right text-xs text-slate-400">${fmtNum(epicIn)} / ${fmtNum(epicOut)}</td>
+      <td class="px-3 py-2 text-right text-xs text-slate-400 tokens-col">${fmtNum(epicIn)} / ${fmtNum(epicOut)}</td>
     </tr>
     ${storyRows}`;
   }).join('');
@@ -408,7 +408,7 @@ function renderCostsTab(data) {
         <tr>
           <th class="px-3 py-2">Story</th><th class="px-3 py-2">Title</th><th class="px-3 py-2 text-center">Status</th>
           <th class="px-3 py-2 text-center">Size</th><th class="px-3 py-2 text-right">Projected</th>
-          <th class="px-3 py-2 text-right">AI Cost</th><th class="px-3 py-2 text-right">Tokens (in/out)</th>
+          <th class="px-3 py-2 text-right">AI Cost</th><th class="px-3 py-2 text-right tokens-col">Tokens (in/out)</th>
         </tr>
       </thead>
       <tbody>${epicBlocks}</tbody>
@@ -417,7 +417,7 @@ function renderCostsTab(data) {
           <td colspan="4" class="px-3 py-2 text-right text-sm">Totals</td>
           <td class="px-3 py-2 text-right text-sm">${usd(totalProjected)}</td>
           <td class="px-3 py-2 text-right text-sm text-teal-600">${usd(t.costUsd)}</td>
-          <td class="px-3 py-2 text-right text-xs text-slate-400">${fmtNum(t.inputTokens)} / ${fmtNum(t.outputTokens)}</td>
+          <td class="px-3 py-2 text-right text-xs text-slate-400 tokens-col">${fmtNum(t.inputTokens)} / ${fmtNum(t.outputTokens)}</td>
         </tr>
       </tfoot>
     </table>
@@ -466,11 +466,14 @@ function renderRecentActivity(data) {
   <div id="activity-panel" class="activity-panel fixed top-0 right-0 h-screen bg-white border-l border-slate-200 shadow-lg flex flex-col hidden md:flex" style="width:280px;z-index:50;transition:width 0.25s ease">
     <div id="activity-expanded" class="flex items-center justify-between px-4 py-3 border-b border-slate-200 flex-shrink-0">
       <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Recent Activity</h4>
-      <button onclick="toggleActivityPanel()" class="text-slate-400 hover:text-slate-700 leading-none px-1" title="Collapse">&#9664;</button>
+      <div class="flex items-center gap-2">
+        <button onclick="document.getElementById('activity-panel').classList.add('hidden')" class="md:hidden text-slate-400 hover:text-slate-700 leading-none px-1 text-base" title="Close" aria-label="Close activity panel">&times;</button>
+        <button onclick="toggleActivityPanel()" class="hidden md:block text-slate-400 hover:text-slate-700 leading-none px-1" title="Collapse" aria-label="Collapse activity panel">&#9664;</button>
+      </div>
     </div>
     <ul id="activity-list" class="flex-1 overflow-y-auto px-4 py-2">${items}</ul>
     <div id="activity-collapsed" class="hidden flex-col items-center pt-3 pb-4 gap-3">
-      <button onclick="toggleActivityPanel()" class="text-slate-400 hover:text-slate-700 leading-none px-1" title="Expand">&#9654;</button>
+      <button onclick="toggleActivityPanel()" class="text-slate-400 hover:text-slate-700 leading-none px-1" title="Expand" aria-label="Expand activity panel">&#9654;</button>
       <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide select-none" style="writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap">Recent Activity</span>
     </div>
   </div>`;
@@ -482,8 +485,10 @@ function renderScripts(data) {
   <script>
   const ALL_DATA = ${allData};
 
+  const VALID_TABS = ['hierarchy','kanban','traceability','charts','costs','bugs'];
+
   function showTab(name) {
-    ['hierarchy','kanban','traceability','charts','costs','bugs'].forEach(t => {
+    VALID_TABS.forEach(t => {
       const el = document.getElementById('tab-' + t);
       const btn = document.getElementById('tab-btn-' + t);
       if (el) el.classList.toggle('hidden', t !== name);
@@ -495,6 +500,8 @@ function renderScripts(data) {
       }
     });
     if (name === 'charts' && typeof initCharts === 'function') { initCharts(); initCharts = () => {}; }
+    localStorage.setItem('activeTab', name);
+    history.replaceState(null, '', '#' + name);
   }
 
   function toggleEpic(id) {
@@ -523,11 +530,17 @@ function renderScripts(data) {
     document.querySelectorAll('.bug-row').forEach(row => {
       row.style.display = (type === 'story') ? 'none' : '';
     });
+    localStorage.setItem('f-epic', epic);
+    localStorage.setItem('f-status', status);
+    localStorage.setItem('f-priority', priority);
+    localStorage.setItem('f-type', type);
+    localStorage.setItem('f-search', document.getElementById('f-search').value);
   }
 
   function clearFilters() {
     ['f-epic','f-status','f-priority','f-type'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('f-search').value = '';
+    ['f-epic','f-status','f-priority','f-type','f-search'].forEach(k => localStorage.removeItem(k));
     applyFilters();
   }
 
@@ -572,7 +585,41 @@ function renderScripts(data) {
     }
   }
 
-  document.addEventListener('DOMContentLoaded', initActivityPanel);
+  document.addEventListener('DOMContentLoaded', function() {
+    initActivityPanel();
+
+    // Restore active tab from URL hash or localStorage
+    const hash = window.location.hash.replace('#', '');
+    const savedTab = VALID_TABS.includes(hash) ? hash : (VALID_TABS.includes(localStorage.getItem('activeTab')) ? localStorage.getItem('activeTab') : 'hierarchy');
+    showTab(savedTab);
+
+    // Restore filter state
+    ['f-epic','f-status','f-priority','f-type'].forEach(id => {
+      const val = localStorage.getItem(id);
+      if (val) document.getElementById(id).value = val;
+    });
+    const savedSearch = localStorage.getItem('f-search');
+    if (savedSearch) document.getElementById('f-search').value = savedSearch;
+    applyFilters();
+
+    // Collapse traceability legend by default on mobile
+    if (window.innerWidth < 768) {
+      var body = document.getElementById('trace-legend-body');
+      var arrow = document.getElementById('trace-legend-arrow');
+      if (body) body.classList.add('hidden');
+      if (arrow) arrow.textContent = '▶';
+    }
+  });
+
+  function openAbout() {
+    document.getElementById('aboutModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeAbout() {
+    document.getElementById('aboutModal').classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeAbout(); });
   </script>`;
 }
 
@@ -602,7 +649,28 @@ function renderHtml(data) {
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-  <style>body { font-family: 'Inter', sans-serif; } code, .font-mono { font-family: 'JetBrains Mono', monospace; } @media (min-width: 768px) { body { padding-right: 280px; } }</style>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    code, .font-mono { font-family: 'JetBrains Mono', monospace; }
+    @media (min-width: 768px) { body { padding-right: 280px; } }
+    @media (max-width: 767px) {
+      #top-bar { padding: 8px 12px !important; }
+      .topbar-title { font-size: 1.1rem !important; line-height: 1.4 !important; }
+      .topbar-tagline { font-size: 0.65rem !important; margin-top: 1px !important; line-height: 1.3 !important; }
+      .topbar-progress { margin-top: 4px !important; }
+      .topbar-stats { gap: 4px !important; flex-wrap: nowrap !important; overflow-x: auto !important; padding-bottom: 2px; }
+      .topbar-tile { padding: 3px 6px !important; min-width: 50px !important; border-radius: 8px !important; }
+      .topbar-tile-num { font-size: 0.8rem !important; line-height: 1.2 !important; }
+      .topbar-tile .text-xs { font-size: 0.6rem !important; margin-top: 1px !important; }
+      #filter-bar { padding: 4px 12px !important; gap: 4px !important; }
+      #filter-bar select, #filter-bar input[type="text"] { padding: 2px 4px !important; font-size: 0.7rem !important; }
+      #filter-bar button { font-size: 0.7rem !important; }
+      #tab-bar button { padding: 5px 10px !important; font-size: 0.72rem !important; }
+      #trace-layout { flex-direction: column !important; }
+      #trace-legend-panel { order: -1; width: 100% !important; }
+      .tokens-col { display: none !important; }
+    }
+  </style>
   ${renderPrintCSS()}
 </head>
 <body class="bg-slate-50 min-h-screen">
@@ -621,6 +689,24 @@ function renderHtml(data) {
   </div>
   ${renderRecentActivity(data)}
   ${renderScripts(data)}
+  <div id="aboutModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div onclick="closeAbout()" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+    <div class="relative z-10 bg-slate-800 border border-slate-600 rounded-xl shadow-2xl w-full max-w-sm p-6 text-center">
+      <button onclick="closeAbout()" class="absolute top-3 right-4 text-slate-400 hover:text-white text-xl leading-none" aria-label="Close">&#x2715;</button>
+      <h2 class="text-2xl font-bold text-blue-400 mb-1">${esc(data.projectName)}</h2>
+      <p class="text-slate-400 text-sm mb-4">${esc(data.tagline)}</p>
+      <a href="${esc(data.githubUrl)}" target="_blank" rel="noopener noreferrer"
+         class="inline-flex items-center gap-1.5 text-blue-400 hover:text-blue-300 text-sm underline underline-offset-2 mb-5">
+        GitHub Repository
+      </a>
+      <div class="border-t border-slate-700 pt-4 text-slate-500 text-xs space-y-1.5">
+        <p>Version <span class="text-slate-300 font-mono">v${esc(data.version)}</span></p>
+        <p>Build <span class="text-slate-300 font-mono">#${esc(data.buildNumber)}</span>&nbsp;<code class="text-slate-600">${esc(data.commitSha)}</code></p>
+        <p>Updated <span class="text-slate-300">${data.generatedAt.slice(0,10)}</span></p>
+      </div>
+      <p class="mt-5 text-slate-500 text-xs">Implemented by Kamal Syed, 2026</p>
+    </div>
+  </div>
 </body>
 </html>`;
 }
