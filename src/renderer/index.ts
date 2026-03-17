@@ -320,7 +320,10 @@ async function submitAIRequest(): Promise<void> {
   }
 
   // Show preview card
-  showPreview(res as unknown as PreviewResponse);
+  showPreview(res as {
+    command: string; explanation: string;
+    is_destructive: boolean; requires_confirmation: boolean; risk_level: string;
+  });
 }
 
 function showPreview(response: PreviewResponse): void {
@@ -339,6 +342,14 @@ previewRunBtn.addEventListener('click', () => {
 
 previewEditBtn.addEventListener('click', () => {
   enterEditMode(previewRefs);
+});
+
+previewEditInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    e.stopPropagation(); // prevent the previewCard keydown from also firing
+    exitEditMode(previewRefs);
+    previewRunBtn.focus();
+  }
 });
 
 previewCancelBtn.addEventListener('click', () => {

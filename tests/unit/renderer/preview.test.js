@@ -6,8 +6,12 @@
 
 const {
   showPreview, hidePreview, enterEditMode, exitEditMode,
-  getEditedCommand, getPendingCommand, isEditMode,
+  getEditedCommand, getPendingCommand, isEditMode, resetPreviewState,
 } = require('../../../dist/renderer/preview.js');
+
+beforeEach(() => {
+  resetPreviewState();
+});
 
 function makeRefs(overrides = {}) {
   const classList = () => {
@@ -35,14 +39,14 @@ const sampleResponse = {
   explanation: 'List files with details',
   is_destructive: false,
   requires_confirmation: false,
-  risk_level: 'low',
+  risk_level: 'safe',
 };
 
 // TC-0149: showPreview() sets riskBadge.textContent to response.risk_level; never leaves it empty
 test('TC-0149: showPreview sets riskBadge.textContent to risk_level', () => {
   const refs = makeRefs();
   showPreview(refs, sampleResponse);
-  expect(refs.riskBadge.textContent).toBe('low');
+  expect(refs.riskBadge.textContent).toBe('safe');
   expect(refs.riskBadge.textContent).not.toBe('');
 });
 
@@ -84,6 +88,17 @@ test('TC-0153: hidePreview from edit mode resets isEditMode to false', () => {
   enterEditMode(refs);
   expect(isEditMode()).toBe(true);
   hidePreview(refs);
+  expect(isEditMode()).toBe(false);
+});
+
+// exitEditMode restores view state
+test('exitEditMode restores previewCmd visibility and hides textarea', () => {
+  const refs = makeRefs();
+  showPreview(refs, sampleResponse);
+  enterEditMode(refs);
+  exitEditMode(refs);
+  expect(refs.previewCmd.classList.contains('hidden')).toBe(false);
+  expect(refs.previewEditInput.classList.contains('hidden')).toBe(true);
   expect(isEditMode()).toBe(false);
 });
 

@@ -62,7 +62,8 @@ export function exitEditMode(refs: PreviewRefs): void {
   refs.previewCmd.classList.remove('hidden');
 }
 
-export function getEditedCommand(refs: PreviewRefs): string {
+export function getEditedCommand(refs: PreviewRefs): string | null {
+  if (!_editMode) return null;
   return refs.previewEditInput.value;
 }
 
@@ -72,4 +73,10 @@ export function getPendingCommand(): { command: string; risk: string } | null {
 
 export function isEditMode(): boolean {
   return _editMode;
+}
+
+/** Reset module state — for tests only. */
+export function resetPreviewState(): void {
+  _pendingCommand = null;
+  _editMode = false;
 }
