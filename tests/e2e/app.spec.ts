@@ -82,3 +82,36 @@ test('PTY round-trip: echo hello_e2e produces output', async () => {
   );
   expect(output).toContain('hello_e2e');
 });
+
+// ── Test 4: AC-0005 — scrollback buffer retains ≥1000 lines ──────────────
+test('scrollback buffer retains at least 1000 lines', async () => {
+  // Reset the output accumulator so stale data from prior tests can't cause a
+  // false-positive match on '1100'.
+  await page.evaluate(() => { (window as any).__e2eOutput = ''; });
+
+  // seq 1 1100 generates 1100 lines of output — exceeds the default 500-line buffer.
+  await page.keyboard.type('seq 1 1100');
+  await page.keyboard.press('Enter');
+
+  // Poll term.buffer.active.length directly rather than checking the raw PTY
+  // string first.  xterm.js processes terminal.write() calls asynchronously via
+  // an internal queue; the IPC output accumulator (__e2eOutput) reflects bytes
+  // delivered to the renderer but NOT yet rendered by xterm.js.  Polling the
+  // buffer length ensures we wait for xterm.js to finish rendering before we
+  // assert, eliminating the race that caused bufferLength to read back as the
+  // viewport-row count (43) instead of the true scrollback total.
+  await page.waitForFunction(
+    () => {
+      const term = (window as any).__activeTerminal;
+      return term != null && term.buffer.active.length >= 1000;
+    },
+    { timeout: 30_000 }
+  );
+
+  const bufferLength = await page.evaluate(() => {
+    const term = (window as any).__activeTerminal;
+    return term ? term.buffer.active.length : 0;
+  });
+
+  expect(bufferLength).toBeGreaterThanOrEqual(1000);
+});

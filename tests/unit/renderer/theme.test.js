@@ -244,3 +244,62 @@ describe('applyScheme()', () => {
     expect(mockSetProperty).toHaveBeenCalledWith('--fg', scheme.fg);
   });
 });
+
+// ── WCAG AA Contrast Tests ─────────────────────────────────────────────────
+
+/**
+ * Compute WCAG 2.1 relative luminance contrast ratio between two hex colors.
+ * Formula: contrast = (lighter + 0.05) / (darker + 0.05)
+ */
+function computeContrastRatio(hex1, hex2) {
+  function linearize(c) {
+    return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  }
+  function hexToLuminance(hex) {
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+    return 0.2126 * linearize(r) + 0.7152 * linearize(g) + 0.0722 * linearize(b);
+  }
+  const L1 = hexToLuminance(hex1);
+  const L2 = hexToLuminance(hex2);
+  const lighter = Math.max(L1, L2);
+  const darker = Math.min(L1, L2);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+// TC-0146
+describe('computeContrastRatio() — WCAG formula', () => {
+  test('TC-0146: black on white returns 21:1 contrast ratio', () => {
+    const ratio = computeContrastRatio('#000000', '#ffffff');
+    expect(ratio).toBeCloseTo(21.0, 1);
+  });
+});
+
+// TC-0147
+describe('WCAG AA — fg/bg contrast ≥ 4.5:1 for all schemes', () => {
+  test('TC-0147: all schemes in ALL_SCHEMES have fg/bg contrast ratio ≥ 4.5', () => {
+    const failures = [];
+    for (const scheme of ALL_SCHEMES) {
+      const ratio = computeContrastRatio(scheme.fg, scheme.bg);
+      if (ratio < 4.5) {
+        failures.push(`${scheme.name}: fg/bg ratio = ${ratio.toFixed(2)}`);
+      }
+    }
+    expect(failures).toEqual([]);
+  });
+});
+
+// TC-0148
+describe('WCAG AA — fg/bg2 contrast ≥ 4.5:1 for all schemes', () => {
+  test('TC-0148: all schemes in ALL_SCHEMES have fg/bg2 contrast ratio ≥ 4.5', () => {
+    const failures = [];
+    for (const scheme of ALL_SCHEMES) {
+      const ratio = computeContrastRatio(scheme.fg, scheme.bg2);
+      if (ratio < 4.5) {
+        failures.push(`${scheme.name}: fg/bg2 ratio = ${ratio.toFixed(2)}`);
+      }
+    }
+    expect(failures).toEqual([]);
+  });
+});

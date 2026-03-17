@@ -10,8 +10,20 @@ import { ConfigStore } from '../config/store';
 import { createProvider } from '../providers/factory';
 import type { AIRequest } from '../providers/interface';
 
+const INTERPRET_TIMEOUT_MS = 30_000;
+
 /** Map of tabId → PtyManager. Supports multi-tab. */
 const ptyMap = new Map<string, PtyManager>();
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('E_AI_TIMEOUT')), ms);
+    promise.then(
+      (val) => { clearTimeout(timer); resolve(val); },
+      (err) => { clearTimeout(timer); reject(err); }
+    );
+  });
+}
 let configStore: ConfigStore;
 let mainWindow: BrowserWindow;
 
@@ -90,11 +102,11 @@ export function registerHandlers(win: BrowserWindow, store: ConfigStore): void {
 
     try {
       const provider = createProvider(providerConfig);
-      return await provider.interpret(request);
+      return await withTimeout(provider.interpret(request), INTERPRET_TIMEOUT_MS);
     } catch (err) {
       const msg = (err as Error).message;
-      const code = msg.includes('401') || msg.includes('auth') || msg.includes('API key')
-        ? 'E_AI_AUTH'
+      const code = msg.includes('E_AI_TIMEOUT') ? 'E_AI_TIMEOUT'
+        : msg.includes('401') || msg.includes('auth') || msg.includes('API key') ? 'E_AI_AUTH'
         : msg.includes('429') ? 'E_AI_RATE_LIMIT'
         : msg.includes('ECONNREFUSED') || msg.includes('ENOTFOUND') ? 'E_AI_UNAVAILABLE'
         : 'E_AI_INVALID_JSON';

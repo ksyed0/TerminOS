@@ -42,3 +42,7 @@ test-results/
 # Logs (application logs — not project tracking files)
 *.log
 .worktrees/
+
+# Generated plan-visualizer artefacts (not committed — regenerated from source)
+Docs/plan-status.html
+Docs/plan-status.json

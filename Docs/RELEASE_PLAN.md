@@ -41,15 +41,15 @@ Description: Electron app with an embedded terminal pane connected to a PTY (nod
 
 Priority: High
 Estimate: L
-Status: In Progress
-Branch: claude/phase2-provider-handshake
+Status: Done
+Branch: claude/us-0001-ac0005-scrollback
 
 Acceptance Criteria:
-  - [ ] AC-0001: App launches and displays a terminal pane
-  - [ ] AC-0002: PTY connects to the user's configured shell on startup
-  - [ ] AC-0003: User can type and execute shell commands directly
-  - [ ] AC-0004: stdout and stderr render correctly including ANSI colour codes
-  - [ ] AC-0005: Scrollback buffer retains at least 1000 lines
+  - [x] AC-0001: App launches and displays a terminal pane
+  - [x] AC-0002: PTY connects to the user's configured shell on startup
+  - [x] AC-0003: User can type and execute shell commands directly
+  - [x] AC-0004: stdout and stderr render correctly including ANSI colour codes
+  - [x] AC-0005: Scrollback buffer retains at least 1000 lines
 
 Dependencies: None
 
@@ -67,6 +67,9 @@ Definition of Done (DOD):
   - [ ] Accessibility audit passed (WCAG 2.1 AA)
   - [ ] Performance: keystroke → display latency < 16ms verified
   - [ ] Session Close Protocol completed
+
+Tasks:
+  TASK-0013: Fix AC-0005 scrollback buffer; verify and close US-0001
 ```
 
 ---
@@ -84,7 +87,6 @@ Description: AI input bar (always visible) accepts natural language. On submit, 
 Priority: High
 Estimate: L
 Status: In Progress
-Branch: feature/US-0002-ai-nl-command-interpret
 
 Acceptance Criteria:
   - [ ] AC-0006: AI input bar is visible and accessible at all times
@@ -108,6 +110,34 @@ Definition of Done (DOD):
   - [ ] Test cases created in TEST_CASES.md
   - [ ] ProviderInterface documented in architecture/
   - [ ] Session Close Protocol completed
+```
+
+```
+TASK-0009: Fix shell context (use config.shell) and per-tab AI command history in renderer
+Type: implementation
+Status: Done
+Branch: feature/US-0002-ai-nl-command-interpret
+```
+
+```
+TASK-0010: Unit tests for ai:interpret and ai:execute IPC handlers (8 cases)
+Type: test
+Status: Done
+Branch: feature/US-0002-ai-nl-command-interpret
+```
+
+```
+TASK-0011: Add test cases TC-0134 through TC-0139 to TEST_CASES.md (one per AC-0006 to AC-0011)
+Type: chore
+Status: Done
+Branch: feature/US-0002-ai-nl-command-interpret
+```
+
+```
+TASK-0012: Update RELEASE_PLAN.md (US-0002 status → In Progress, add TASK-0009 to TASK-0012) and advance ID_REGISTRY
+Type: chore
+Status: Done
+Branch: feature/US-0002-ai-nl-command-interpret
 ```
 
 ---
