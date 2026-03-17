@@ -5,10 +5,10 @@ on:
   push:
     branches: [main, develop]
     paths:
-      - 'Docs/RELEASE_PLAN.md'
-      - 'Docs/TEST_CASES.md'
-      - 'Docs/BUGS.md'
-      - 'Docs/AI_COST_LOG.md'
+      - 'docs/RELEASE_PLAN.md'
+      - 'docs/TEST_CASES.md'
+      - 'docs/BUGS.md'
+      - 'docs/AI_COST_LOG.md'
       - 'progress.md'
 
 permissions:
@@ -45,17 +45,13 @@ jobs:
           CI: true
 
       - name: Generate plan-status.html
-        run: |
-          node tools/generate-plan.js
-          mkdir -p _site
-          cp Docs/plan-status.html _site/index.html
-          cp Docs/plan-status.json _site/plan-status.json 2>/dev/null || true
+        run: node tools/generate-plan.js
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
         with:
-          path: ./_site
+          path: ./docs
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
