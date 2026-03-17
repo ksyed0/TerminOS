@@ -8,6 +8,5 @@
 | US           | US-0017               | US-0016           |
 | TASK         | TASK-0013             | TASK-0012         |
 | AC           | AC-0103               | AC-0102           |
-| TC           | TC-0134               | TC-0133           |
+| TC           | TC-0146               | TC-0145           |
 | BUG          | BUG-0012              | BUG-0011          |
-
