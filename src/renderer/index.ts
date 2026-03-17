@@ -373,6 +373,16 @@ function buildSchemeGrid(container: HTMLElement, schemes: ColorScheme[], selecte
       applyScheme(scheme);
       applyThemeToTerminals();
     });
+    btn.addEventListener('mouseenter', () => {
+      applyScheme(scheme);
+      const xtermTheme = toXtermTheme(scheme);
+      tabs.forEach((tab) => { tab.terminal.options.theme = xtermTheme; });
+    });
+    btn.addEventListener('mouseleave', () => {
+      applyScheme(currentScheme);
+      const xtermTheme = toXtermTheme(currentScheme);
+      tabs.forEach((tab) => { tab.terminal.options.theme = xtermTheme; });
+    });
     container.appendChild(btn);
   });
 }
