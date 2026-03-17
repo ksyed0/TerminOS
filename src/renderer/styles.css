@@ -434,6 +434,7 @@ html, body {
   outline-offset: 2px;
 }
 
+<<<<<<< HEAD
 /* ── Vertical splitter ──────────────────────────────────────────────────────── */
 .pane-splitter-vertical {
   height: 4px;
@@ -485,4 +486,19 @@ html, body {
   gap: 8px;
   margin-top: 16px;
   justify-content: flex-end;
+}
+
+/* ── Preview edit input ──────────────────────────────────────────────────────── */
+.preview-edit-input {
+  font-family: var(--font-family, 'JetBrains Mono', monospace);
+  font-size: var(--font-size, 14px);
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--bg3);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px;
+  resize: vertical;
+  min-height: 2em;
 }

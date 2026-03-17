@@ -15,6 +15,11 @@ import {
 } from './theme';
 
 import { reorderTab, getTabAtIndex, shouldConfirmClose, SPLIT_VERTICAL_CLASS } from './tabs';
+import {
+  showPreview as _showPreview, hidePreview, enterEditMode, exitEditMode,
+  getEditedCommand, getPendingCommand, isEditMode,
+  type PreviewRefs, type PreviewResponse,
+} from './preview';
 
 // ── Globals injected by preload ───────────────────────────────────────────────
 declare const window: Window & {
@@ -29,6 +34,7 @@ interface Tab {
   paneEl: HTMLElement;
   tabEl: HTMLElement;
   title: string;
+  onOutputDispose: (() => void) | null;
 }
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -40,6 +46,8 @@ let currentMode: 'dark' | 'light' | 'auto' = 'auto';
 let currentScheme: ColorScheme = DARK_SCHEMES[0];
 let isFirstRun = false;
 const activePtys: Map<string, true> = new Map();
+let configuredShell = '/bin/zsh';
+const tabHistory: Map<string, string[]> = new Map();
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
 const tabBar         = document.getElementById('tab-bar')!;
@@ -54,7 +62,9 @@ const previewExp     = document.getElementById('preview-explanation')!;
 const riskBadge      = document.getElementById('risk-badge')!;
 const confirmDialog  = document.getElementById('confirm-dialog')!;
 const previewRunBtn  = document.getElementById('preview-run-btn')!;
+const previewEditBtn  = document.getElementById('preview-edit-btn')!;
 const previewCancelBtn = document.getElementById('preview-cancel-btn')!;
+const previewEditInput = document.getElementById('preview-edit-input') as HTMLTextAreaElement;
 const themeOverlay   = document.getElementById('theme-overlay')!;
 const themeApplyBtn  = document.getElementById('theme-apply-btn')!;
 const schemeGrid     = document.getElementById('scheme-grid')!;
@@ -74,6 +84,11 @@ const connectionStatus  = document.getElementById('connection-status')!;
 const shellInput      = document.getElementById('shell-input') as HTMLInputElement;
 const fontFamilyInput = document.getElementById('font-family-input') as HTMLInputElement;
 const fontSizeInput   = document.getElementById('font-size-input') as HTMLInputElement;
+
+// ── Preview refs ───────────────────────────────────────────────────────────────
+const previewRefs: PreviewRefs = {
+  previewCard, previewCmd, previewExp, riskBadge, confirmDialog, previewEditInput,
+};
 
 // ── ID generation ──────────────────────────────────────────────────────────────
 let _tabCounter = 0;
@@ -139,12 +154,12 @@ async function createTab(splitDir: 'horizontal' | 'vertical' | false = false): P
 
   // xterm.js
   const terminal = new Terminal({
-    fontFamily: currentScheme.bg === '#ffffff' || currentScheme.bg === '#fdf6e3'
-      ? `'JetBrains Mono', monospace` : `'JetBrains Mono', monospace`,
+    fontFamily: `'JetBrains Mono', monospace`,
     fontSize: currentFontSize,
     theme: toXtermTheme(currentScheme),
     cursorBlink: true,
     allowTransparency: false,
+    scrollback: 1000,
   });
   const fitAddon = new FitAddon();
   terminal.loadAddon(fitAddon);
@@ -174,14 +189,16 @@ async function createTab(splitDir: 'horizontal' | 'vertical' | false = false): P
   }
 
   terminal.open(paneEl);
-
-  const tab: Tab = { id, terminal, fitAddon, paneEl, tabEl, title };
-  tabs.set(id, tab);
+  // Test hook — expose active terminal for e2e scrollback assertion
+  (window as any).__activeTerminal = terminal;
 
   // Forward PTY output
-  window.terminalAPI.onOutput((tabId, data) => {
+  const onOutputDispose = window.terminalAPI.onOutput((tabId, data) => {
     if (tabId === id) terminal.write(data);
   });
+
+  const tab: Tab = { id, terminal, fitAddon, paneEl, tabEl, title, onOutputDispose };
+  tabs.set(id, tab);
 
   // Forward keystrokes
   terminal.onData((data) => {
@@ -202,13 +219,14 @@ function activateTab(id: string): void {
   const tab = tabs.get(id);
   if (!tab) return;
 
+  const prevActiveId = activeTabId;
   tabs.forEach((t, tid) => {
-    t.paneEl.style.display = (tid === id || (splitTabId && tid === splitTabId && id === activeTabId)) ? '' : 'none';
+    t.paneEl.style.display = (tid === id || (splitTabId && tid === splitTabId && id === prevActiveId)) ? '' : 'none';
     t.tabEl.setAttribute('aria-selected', tid === id ? 'true' : 'false');
     t.tabEl.classList.toggle('active', tid === id);
     // In split mode keep both visible
     if (splitTabId) {
-      const otherSplitId = id === activeTabId ? splitTabId : activeTabId;
+      const otherSplitId = id === prevActiveId ? splitTabId : prevActiveId;
       if (otherSplitId) {
         const other = tabs.get(otherSplitId!);
         if (other) other.paneEl.style.display = '';
@@ -217,6 +235,7 @@ function activateTab(id: string): void {
   });
 
   activeTabId = id;
+  (window as any).__activeTerminal = tabs.get(id)?.terminal ?? null;
   tab.terminal.focus();
 }
 
@@ -255,9 +274,11 @@ async function closeTabById(id: string): Promise<void> {
   activePtys.delete(id);
   await window.terminalAPI.closeTerminal(id);
   tab.terminal.dispose();
+  tab.onOutputDispose?.();
   tab.paneEl.remove();
   tab.tabEl.remove();
   tabs.delete(id);
+  tabHistory.delete(id);
 
   if (id === splitTabId) {
     const splitter = paneContainer.querySelector('.pane-splitter, .pane-splitter-vertical') as (HTMLElement & { _cleanup?: () => void }) | null;
@@ -399,8 +420,6 @@ const resizeObserver = new ResizeObserver(() => fitAllTerminals());
 resizeObserver.observe(paneContainer);
 
 // ── AI Input ───────────────────────────────────────────────────────────────────
-let pendingCommand: { command: string; risk: string } | null = null;
-
 async function submitAIRequest(): Promise<void> {
   const input = aiInput.value.trim();
   if (!input || !activeTabId) return;
@@ -408,22 +427,31 @@ async function submitAIRequest(): Promise<void> {
   aiInput.value = '';
   aiInput.disabled = true;
   aiSubmitBtn.disabled = true;
+  aiSubmitBtn.textContent = '…';
 
   // Get current context from PTY (we approximate cwd as home for now)
   const request = {
     user_input: input,
     input_type: 'text' as const,
-    shell: '/bin/zsh',
+    shell: configuredShell,
     cwd: '~',
     platform: navigator.userAgent.includes('Mac') ? 'darwin'
       : navigator.userAgent.includes('Win') ? 'win32' : 'linux',
-    history: [],
+    history: tabHistory.get(activeTabId) ?? [],
   };
 
-  const result = await window.terminalAPI.interpret(request);
-
-  aiInput.disabled = false;
-  aiSubmitBtn.disabled = false;
+  let result: unknown;
+  try {
+    result = await window.terminalAPI.interpret(request);
+  } catch (err) {
+    const tab = tabs.get(activeTabId);
+    tab?.terminal.writeln(`\r\n\x1b[31m[AI Error] ${(err as Error).message}\x1b[0m\r\n`);
+    return;
+  } finally {
+    aiInput.disabled = false;
+    aiSubmitBtn.disabled = false;
+    aiSubmitBtn.textContent = '↵';
+  }
 
   if (!result || typeof result !== 'object') return;
   const res = result as Record<string, unknown>;
@@ -431,44 +459,58 @@ async function submitAIRequest(): Promise<void> {
   if ('error' in res) {
     // Show error in active terminal
     const tab = tabs.get(activeTabId);
-    tab?.terminal.writeln(`\r\n\x1b[31m[AI Error] ${res.message}\x1b[0m\r\n`);
+    tab?.terminal.writeln(`\r\n\x1b[31m[AI Error] ${res.message ?? res.error}\x1b[0m\r\n`);
     return;
   }
 
   // Show preview card
-  showPreview(res as { command: string; explanation: string; is_destructive: boolean; requires_confirmation: boolean; risk_level: string });
+  showPreview(res as {
+    command: string; explanation: string;
+    is_destructive: boolean; requires_confirmation: boolean; risk_level: string;
+  });
 }
 
-function showPreview(response: {
-  command: string; explanation: string;
-  is_destructive: boolean; requires_confirmation: boolean; risk_level: string;
-}): void {
-  previewCmd.textContent = response.command;
-  previewExp.textContent = response.explanation;
-
-  riskBadge.textContent = response.risk_level;
-  riskBadge.className = `risk-badge ${response.risk_level}`;
-
-  confirmDialog.classList.toggle('hidden', !response.requires_confirmation);
-  pendingCommand = { command: response.command, risk: response.risk_level };
-
-  previewCard.classList.remove('hidden');
+function showPreview(response: PreviewResponse): void {
+  _showPreview(previewRefs, response);
   previewRunBtn.focus();
 }
 
 previewRunBtn.addEventListener('click', () => {
-  if (!pendingCommand || !activeTabId) return;
-  window.terminalAPI.executeCommand(activeTabId, pendingCommand.command);
-  previewCard.classList.add('hidden');
-  pendingCommand = null;
+  const cmd = isEditMode() ? getEditedCommand(previewRefs) : getPendingCommand()?.command;
+  if (!cmd || !activeTabId) return;
+  // Track command in per-tab history (capped at 20)
+  const hist = tabHistory.get(activeTabId) ?? [];
+  hist.push(cmd);
+  if (hist.length > 20) hist.shift();
+  tabHistory.set(activeTabId, hist);
+  hidePreview(previewRefs);
+  window.terminalAPI.executeCommand(activeTabId, cmd);
   const tab = tabs.get(activeTabId);
   tab?.terminal.focus();
 });
 
+previewEditBtn.addEventListener('click', () => {
+  enterEditMode(previewRefs);
+});
+
+previewEditInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    e.stopPropagation(); // prevent the previewCard keydown from also firing
+    exitEditMode(previewRefs);
+    previewRunBtn.focus();
+  }
+});
+
 previewCancelBtn.addEventListener('click', () => {
-  previewCard.classList.add('hidden');
-  pendingCommand = null;
+  hidePreview(previewRefs);
   aiInput.focus();
+});
+
+previewCard.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    hidePreview(previewRefs);
+    aiInput.focus();
+  }
 });
 
 aiSubmitBtn.addEventListener('click', submitAIRequest);
@@ -500,12 +542,20 @@ function buildSchemeGrid(container: HTMLElement, schemes: ColorScheme[], selecte
       applyScheme(scheme);
       applyThemeToTerminals();
     });
+    btn.addEventListener('mouseenter', () => {
+      applyScheme(scheme);
+      applyThemeToTerminals(scheme);
+    });
+    btn.addEventListener('mouseleave', () => {
+      applyScheme(currentScheme);
+      applyThemeToTerminals();
+    });
     container.appendChild(btn);
   });
 }
 
-function applyThemeToTerminals(): void {
-  const xtermTheme = toXtermTheme(currentScheme);
+function applyThemeToTerminals(override?: ColorScheme): void {
+  const xtermTheme = toXtermTheme(override ?? currentScheme);
   tabs.forEach((tab) => { tab.terminal.options.theme = xtermTheme; });
 }
 
@@ -528,6 +578,24 @@ function setupModeButtons(container: HTMLElement, mode: 'dark' | 'light' | 'auto
 }
 
 // ── Settings panel ──────────────────────────────────────────────────────────────
+
+/** Show/hide provider-specific fields based on selected provider. */
+function applyProviderVisibility(provider: string): void {
+  const isOllama = provider === 'ollama';
+  // Ollama host row
+  ollamaHostInput.setAttribute('aria-hidden', String(!isOllama));
+  ollamaHostInput.disabled = !isOllama;
+  (ollamaHostInput as HTMLElement).style.display = isOllama ? '' : 'none';
+  // API key row
+  apiKeyInput.setAttribute('aria-hidden', String(isOllama));
+  apiKeyInput.disabled = isOllama;
+  (apiKeyInput as HTMLElement).style.display = isOllama ? 'none' : '';
+}
+
+providerSelect.addEventListener('change', () => {
+  applyProviderVisibility(providerSelect.value);
+});
+
 settingsBtn.addEventListener('click', () => {
   settingsPanel.classList.toggle('hidden');
 });
@@ -539,6 +607,14 @@ settingsCloseBtn.addEventListener('click', () => {
 testConnectionBtn.addEventListener('click', async () => {
   connectionStatus.textContent = 'Testing…';
   connectionStatus.className = 'connection-status';
+  // Save current form values before testing so testConnection uses up-to-date config
+  const partial: Record<string, unknown> = {
+    provider: providerSelect.value,
+    model: modelInput.value || undefined,
+    ollama_host: ollamaHostInput.value || null,
+  };
+  if (apiKeyInput.value) partial.api_key = apiKeyInput.value;
+  await window.terminalAPI.setConfig(partial);
   const result = await window.terminalAPI.testConnection() as Record<string, unknown>;
   if (result.ok) {
     connectionStatus.textContent = `✓ Connected — ${result.provider} / ${result.model} (${result.latency_ms}ms)`;
@@ -578,6 +654,7 @@ async function init(): Promise<void> {
 
   currentFontSize = (config.font_size as number) ?? 14;
   document.documentElement.style.setProperty('--font-size', `${currentFontSize}px`);
+  configuredShell = (config.shell as string) ?? '/bin/zsh';
   if (config.font_family) {
     document.documentElement.style.setProperty('--font-family', `'${config.font_family}', monospace`);
   }
@@ -587,6 +664,7 @@ async function init(): Promise<void> {
   modelInput.value = (config.model as string) ?? '';
   ollamaHostInput.value = (config.ollama_host as string) ?? '';
   shellInput.value = (config.shell as string) ?? '';
+  applyProviderVisibility(providerSelect.value);
   fontFamilyInput.value = (config.font_family as string) ?? 'JetBrains Mono';
   fontSizeInput.value = String(currentFontSize);
 

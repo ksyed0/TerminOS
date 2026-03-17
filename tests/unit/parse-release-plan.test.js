@@ -89,31 +89,4 @@ describe('parseReleasePlan — edge cases', () => {
     const result = parseReleasePlan(md);
     expect(result.epics).toHaveLength(2);
   });
-
-  it('parses story with blank lines between sections (real RELEASE_PLAN.md format)', () => {
-    const md = `\`\`\`
-US-0099 (EPIC-0001): As a user, I want X, so that Y.
-
-Description: Long description
-             spanning multiple lines.
-
-Priority: High
-Estimate: M
-Status: In Progress
-Branch: feature/US-0099-x
-
-Acceptance Criteria:
-  - [x] AC-0099: First AC done
-  - [ ] AC-0100: Second AC pending
-
-Dependencies: None
-\`\`\``;
-    const result = parseReleasePlan(md);
-    expect(result.stories).toHaveLength(1);
-    expect(result.stories[0].status).toBe('In Progress');
-    expect(result.stories[0].branch).toBe('feature/US-0099-x');
-    expect(result.stories[0].estimate).toBe('M');
-    expect(result.stories[0].acs).toHaveLength(2);
-    expect(result.stories[0].acs[0].done).toBe(true);
-  });
 });

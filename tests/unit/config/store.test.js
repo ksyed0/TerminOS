@@ -163,3 +163,81 @@ describe('ConfigStore.deleteApiKey()', () => {
     warnSpy.mockRestore();
   });
 });
+
+// TC-0141–TC-0145 — additional ConfigStore tests
+
+// TC-0141: get() never returns an api_key field
+// ConfigStore.set() never writes api_key to the config file, so get() should never surface one.
+// Even when the file contains only legitimate AppConfig fields, api_key must be absent.
+test('TC-0141: get() never returns an api_key field', () => {
+  // Config file has only legitimate AppConfig fields — no api_key
+  fs.readFileSync.mockReturnValue(JSON.stringify({ provider: 'openai', model: 'gpt-4o' }));
+  const store = new ConfigStore('/tmp/config.json');
+  const cfg = store.get();
+  expect(Object.prototype.hasOwnProperty.call(cfg, 'api_key')).toBe(false);
+});
+
+// TC-0142: setApiKey() calls keytar.setPassword with correct arguments
+test('TC-0142: setApiKey() calls keytar.setPassword with correct arguments', async () => {
+  keytar.setPassword.mockResolvedValue(undefined);
+  const store = new ConfigStore('/tmp/config.json');
+  await store.setApiKey('claude', 'sk-ant-my-key');
+  expect(keytar.setPassword).toHaveBeenCalledWith('TermnOS', 'claude', 'sk-ant-my-key');
+});
+
+// TC-0143: getApiKey() falls back to process.env.PROVIDER_API_KEY when keytar unavailable
+describe('TC-0143: getApiKey falls back to env var when keytar unavailable', () => {
+  let IsolatedConfigStore;
+
+  beforeEach(() => {
+    jest.resetModules();
+    jest.mock('electron', () => ({ app: { getPath: jest.fn().mockReturnValue('/mock/userData') } }));
+    jest.mock('keytar', () => { throw new Error('keytar unavailable'); }, { virtual: true });
+    jest.mock('fs', () => ({
+      readFileSync: jest.fn().mockImplementation(() => {
+        const e = new Error('ENOENT');
+        e.code = 'ENOENT';
+        throw e;
+      }),
+      writeFileSync: jest.fn(),
+      mkdirSync: jest.fn(),
+    }));
+    IsolatedConfigStore = require('../../../dist/main/config/store.js').ConfigStore;
+  });
+
+  afterEach(() => {
+    delete process.env.OPENAI_API_KEY;
+    jest.resetModules();
+  });
+
+  test('falls back to process.env.PROVIDER_API_KEY when keytar unavailable', async () => {
+    process.env.OPENAI_API_KEY = 'env-fallback-key';
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+    const store = new IsolatedConfigStore('/tmp/config.json');
+    const key = await store.getApiKey('openai');
+    warnSpy.mockRestore();
+    // When keytar is unavailable, falls back to process.env.OPENAI_API_KEY
+    expect(key).toBe('env-fallback-key');
+  });
+});
+
+// TC-0144: set() persists values and get() returns updated values
+test('TC-0144: set() persists values and get() returns updated values', () => {
+  fs.writeFileSync.mockReturnValue(undefined);
+  const store = new ConfigStore('/tmp/config.json');
+  store.set({ provider: 'claude', model: 'claude-3-opus-20240229' });
+  const cfg = store.get();
+  expect(cfg.provider).toBe('claude');
+  expect(cfg.model).toBe('claude-3-opus-20240229');
+  // Unrelated defaults still intact
+  expect(cfg.font_size).toBe(14);
+  expect(fs.writeFileSync).toHaveBeenCalled();
+});
+
+// TC-0145: ConfigStore constructed with testMode=true returns null from getApiKey without calling keytar
+test('TC-0145: ConfigStore with testMode=true returns null from getApiKey without calling keytar', async () => {
+  const store = new ConfigStore('/tmp/config.json', true);
+  const key = await store.getApiKey('claude');
+  expect(key).toBeNull();
+  expect(keytar.getPassword).not.toHaveBeenCalled();
+});

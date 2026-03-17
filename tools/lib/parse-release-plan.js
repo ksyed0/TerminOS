@@ -107,21 +107,19 @@ function parseReleasePlan(markdown) {
   const blocks = extractCodeBlocks(markdown);
   const epics = [], stories = [], tasks = [];
 
-  // Split at entity-header lines (US-XXXX, EPIC-XXXX, TASK-XXXX) so blank lines
-  // within a single entity's body don't orphan its Priority/Status/Branch fields.
-  const entityHeaderRe = /(?=^(?:US|EPIC|TASK)-\d{4}[\s(:])/m;
-
   for (const block of blocks) {
-    const chunks = block.split(entityHeaderRe).map(c => c.trim()).filter(Boolean);
+    const chunks = block.split(/\n{2,}/);
     for (const chunk of chunks) {
-      if (/^EPIC-\d{4}:/.test(chunk)) {
-        const e = parseEpicBlock(chunk);
+      const trimmed = chunk.trim();
+      if (!trimmed) continue;
+      if (/^EPIC-\d{4}:/.test(trimmed)) {
+        const e = parseEpicBlock(trimmed);
         if (e) epics.push(e);
-      } else if (/^US-\d{4}\s*\(EPIC-/.test(chunk)) {
-        const s = parseStoryBlock(chunk);
+      } else if (/^US-\d{4}\s*\(EPIC-/.test(trimmed)) {
+        const s = parseStoryBlock(trimmed);
         if (s) stories.push(s);
-      } else if (/^TASK-\d{4}\s*\(US-/.test(chunk)) {
-        const t = parseTaskBlock(chunk);
+      } else if (/^TASK-\d{4}\s*\(US-/.test(trimmed)) {
+        const t = parseTaskBlock(trimmed);
         if (t) tasks.push(t);
       }
     }
