@@ -457,7 +457,7 @@ Type: Functional
 Preconditions: A valid API key is entered
 Steps:
   1. Click "Test connection"
-Expected Result: A success indicator appears; config is saved only after a successful test
+Expected Result: Config is saved with the current form values first, then the connection is tested against the updated config; a success indicator appears if the test passes
 Actual Result:
 Status: [ ] Not Run
 Defect Raised: None
@@ -508,6 +508,96 @@ Steps:
   2. Relaunch TermnOS
   3. Open provider configuration
 Expected Result: Claude is still the selected provider; connection is active without re-entering the key
+Actual Result:
+Status: [ ] Not Run
+Defect Raised: None
+Notes:
+```
+
+```
+TC-0141: ConfigStore.get() never returns api_key field
+Related Story: US-0005
+Related Task: TASK-0005
+Related AC: AC-0025
+Type: Unit
+Preconditions: ConfigStore module is loaded with a mocked filesystem; config file contains only legitimate AppConfig fields
+Steps:
+  1. Construct a ConfigStore instance
+  2. Call store.get()
+  3. Inspect the returned object for an api_key property
+Expected Result: The returned config object does not contain an api_key field under any circumstances
+Actual Result:
+Status: [ ] Not Run
+Defect Raised: None
+Notes:
+```
+
+```
+TC-0142: ConfigStore.setApiKey() calls keytar.setPassword with correct arguments
+Related Story: US-0005
+Related Task: TASK-0005
+Related AC: AC-0025
+Type: Unit
+Preconditions: ConfigStore module is loaded with keytar mocked
+Steps:
+  1. Construct a ConfigStore instance
+  2. Call store.setApiKey('claude', 'sk-ant-my-key')
+  3. Assert that keytar.setPassword was called with ('TermnOS', 'claude', 'sk-ant-my-key')
+Expected Result: keytar.setPassword is called exactly once with the service name 'TermnOS', the provider as the account, and the supplied key as the password
+Actual Result:
+Status: [ ] Not Run
+Defect Raised: None
+Notes:
+```
+
+```
+TC-0143: ConfigStore.getApiKey() falls back to env var when keytar unavailable
+Related Story: US-0005
+Related Task: TASK-0005
+Related AC: AC-0025
+Type: Unit
+Preconditions: ConfigStore module is loaded in an isolated module registry where requiring keytar throws an error; process.env.OPENAI_API_KEY is set to a known value
+Steps:
+  1. Reset modules and mock keytar to throw on require
+  2. Require a fresh ConfigStore instance
+  3. Call store.getApiKey('openai')
+Expected Result: getApiKey returns the value of process.env.OPENAI_API_KEY rather than null or throwing
+Actual Result:
+Status: [ ] Not Run
+Defect Raised: None
+Notes:
+```
+
+```
+TC-0144: ConfigStore.set() persists values and get() returns updated values
+Related Story: US-0005
+Related Task: TASK-0005
+Related AC: AC-0028
+Type: Unit
+Preconditions: ConfigStore module is loaded with fs mocked; writeFileSync succeeds
+Steps:
+  1. Construct a ConfigStore instance
+  2. Call store.set({ provider: 'claude', model: 'claude-3-opus-20240229' })
+  3. Call store.get() and inspect the result
+Expected Result: The returned config reflects the updated provider and model; unrelated default fields (e.g. font_size) remain at their default values; writeFileSync was called
+Actual Result:
+Status: [ ] Not Run
+Defect Raised: None
+Notes:
+```
+
+```
+TC-0145: ConfigStore constructed with testMode=true returns null from getApiKey without calling keytar
+Related Story: US-0005
+Related Task: TASK-0005
+Related AC: AC-0025
+Type: Unit
+Preconditions: ConfigStore module is loaded with keytar mocked
+Steps:
+  1. Construct a ConfigStore instance with testMode=true as the second constructor argument
+  2. Call store.getApiKey('claude')
+  3. Assert that keytar.getPassword was not called
+Expected Result: getApiKey returns null immediately without invoking keytar
 Actual Result:
 Status: [ ] Not Run
 Defect Raised: None

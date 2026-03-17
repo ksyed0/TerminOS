@@ -186,45 +186,39 @@ test('TC-0142: setApiKey() calls keytar.setPassword with correct arguments', asy
 });
 
 // TC-0143: getApiKey() falls back to process.env.PROVIDER_API_KEY when keytar unavailable
-// The store's getKeytar() returns null when keytar cannot be loaded; in that case getApiKey
-// reads process.env.PROVIDER_API_KEY. We force keytar to appear unavailable by loading a fresh
-// module instance where _keytar is null and making the require('keytar') throw MODULE_NOT_FOUND.
-test('TC-0143: getApiKey() falls back to process.env.PROVIDER_API_KEY when keytar unavailable', async () => {
-  jest.resetModules();
-  jest.mock('electron', () => ({ app: { getPath: jest.fn().mockReturnValue('/mock/userData') } }));
-  // Mock keytar to throw on require, simulating keytar being unavailable
-  jest.mock('keytar', () => {
-    throw new Error('Cannot find module keytar');
-  }, { virtual: true });
-  jest.mock('fs', () => ({ readFileSync: jest.fn(), writeFileSync: jest.fn(), mkdirSync: jest.fn() }));
+describe('TC-0143: getApiKey falls back to env var when keytar unavailable', () => {
+  let IsolatedConfigStore;
 
-  process.env.OPENAI_API_KEY = 'env-fallback-key';
-  try {
-    const { ConfigStore: FreshStore } = require('../../../dist/main/config/store.js');
-    const freshFs = require('fs');
-    freshFs.readFileSync.mockImplementation(() => {
-      const e = new Error('ENOENT');
-      e.code = 'ENOENT';
-      throw e;
-    });
+  beforeEach(() => {
+    jest.resetModules();
+    jest.mock('electron', () => ({ app: { getPath: jest.fn().mockReturnValue('/mock/userData') } }));
+    jest.mock('keytar', () => { throw new Error('keytar unavailable'); }, { virtual: true });
+    jest.mock('fs', () => ({
+      readFileSync: jest.fn().mockImplementation(() => {
+        const e = new Error('ENOENT');
+        e.code = 'ENOENT';
+        throw e;
+      }),
+      writeFileSync: jest.fn(),
+      mkdirSync: jest.fn(),
+    }));
+    IsolatedConfigStore = require('../../../dist/main/config/store.js').ConfigStore;
+  });
+
+  afterEach(() => {
+    delete process.env.OPENAI_API_KEY;
+    jest.resetModules();
+  });
+
+  test('falls back to process.env.PROVIDER_API_KEY when keytar unavailable', async () => {
+    process.env.OPENAI_API_KEY = 'env-fallback-key';
     const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
-    const store = new FreshStore('/tmp/config.json');
+    const store = new IsolatedConfigStore('/tmp/config.json');
     const key = await store.getApiKey('openai');
     warnSpy.mockRestore();
     // When keytar is unavailable, falls back to process.env.OPENAI_API_KEY
     expect(key).toBe('env-fallback-key');
-  } finally {
-    delete process.env.OPENAI_API_KEY;
-    // Restore mocks for subsequent tests
-    jest.resetModules();
-    jest.mock('electron', () => ({ app: { getPath: jest.fn().mockReturnValue('/mock/userData') } }));
-    jest.mock('keytar', () => ({
-      getPassword: jest.fn(),
-      setPassword: jest.fn(),
-      deletePassword: jest.fn(),
-    }), { virtual: true });
-    jest.mock('fs', () => ({ readFileSync: jest.fn(), writeFileSync: jest.fn(), mkdirSync: jest.fn() }));
-  }
+  });
 });
 
 // TC-0144: set() persists values and get() returns updated values
