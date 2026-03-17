@@ -27,7 +27,7 @@
 ### `terminal:input`
 ```typescript
 // renderer → main (invoke)
-{ data: string }  // raw keystrokes / paste
+{ tabId: string; data: string }  // raw keystrokes / paste
 
 // returns: void
 ```
@@ -35,13 +35,13 @@
 ### `terminal:output`
 ```typescript
 // main → renderer (on)
-{ data: string }  // raw PTY output chunk
+{ tabId: string; data: string }  // raw PTY output chunk
 ```
 
 ### `terminal:resize`
 ```typescript
 // renderer → main (invoke)
-{ cols: number; rows: number }
+{ tabId: string; cols: number; rows: number }
 
 // returns: void
 ```
@@ -49,7 +49,7 @@
 ### `terminal:exit`
 ```typescript
 // main → renderer (on)
-{ exitCode: number; signal?: string }
+{ tabId: string; exitCode: number; signal?: string }
 ```
 
 ### `ai:interpret`
@@ -77,7 +77,7 @@
 ### `ai:execute`
 ```typescript
 // renderer → main (invoke)
-{ command: string }  // exactly the command from AIResponse
+{ tabId: string; command: string }  // tabId routes to correct PTY; command is exactly the AIResponse command
 
 // returns: void — command is written directly to PTY
 ```
@@ -140,5 +140,5 @@ Partial<AppConfig>  // only the fields to change
 2. `nodeIntegration: false` — enforced in BrowserWindow options
 3. `sandbox: true` — renderer runs in Chromium sandbox
 4. API keys are **never** included in `config:get` responses
-5. All IPC handlers validate payload shape before processing — malformed payloads return `E_IPC_PAYLOAD`
+5. IPC handlers do not currently validate payload shape — malformed payloads silently no-op (tracked as BUG-0006; full validation returning E_IPC_PAYLOAD is deferred)
 6. `ai:execute` only writes the exact command string from an AIResponse — no shell interpolation

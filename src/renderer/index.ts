@@ -27,6 +27,7 @@ interface Tab {
   paneEl: HTMLElement;
   tabEl: HTMLElement;
   title: string;
+  onOutputDispose: (() => void) | null;
 }
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -37,6 +38,8 @@ let currentFontSize = 14;
 let currentMode: 'dark' | 'light' | 'auto' = 'auto';
 let currentScheme: ColorScheme = DARK_SCHEMES[0];
 let isFirstRun = false;
+let configuredShell = '/bin/zsh';
+const tabHistory: Map<string, string[]> = new Map();
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
 const tabBar         = document.getElementById('tab-bar')!;
@@ -103,12 +106,12 @@ async function createTab(makeSplit = false): Promise<string> {
 
   // xterm.js
   const terminal = new Terminal({
-    fontFamily: currentScheme.bg === '#ffffff' || currentScheme.bg === '#fdf6e3'
-      ? `'JetBrains Mono', monospace` : `'JetBrains Mono', monospace`,
+    fontFamily: `'JetBrains Mono', monospace`,
     fontSize: currentFontSize,
     theme: toXtermTheme(currentScheme),
     cursorBlink: true,
     allowTransparency: false,
+    scrollback: 1000,
   });
   const fitAddon = new FitAddon();
   terminal.loadAddon(fitAddon);
@@ -127,14 +130,16 @@ async function createTab(makeSplit = false): Promise<string> {
   }
 
   terminal.open(paneEl);
-
-  const tab: Tab = { id, terminal, fitAddon, paneEl, tabEl, title };
-  tabs.set(id, tab);
+  // Test hook — expose active terminal for e2e scrollback assertion
+  (window as any).__activeTerminal = terminal;
 
   // Forward PTY output
-  window.terminalAPI.onOutput((tabId, data) => {
+  const onOutputDispose = window.terminalAPI.onOutput((tabId, data) => {
     if (tabId === id) terminal.write(data);
   });
+
+  const tab: Tab = { id, terminal, fitAddon, paneEl, tabEl, title, onOutputDispose };
+  tabs.set(id, tab);
 
   // Forward keystrokes
   terminal.onData((data) => {
@@ -154,14 +159,15 @@ function activateTab(id: string): void {
   const tab = tabs.get(id);
   if (!tab) return;
 
+  const prevActiveId = activeTabId;
   tabs.forEach((t, tid) => {
     const isSplit = splitTabId === tid && tid !== id;
-    t.paneEl.style.display = (tid === id || (splitTabId && tid === splitTabId && id === activeTabId)) ? '' : 'none';
+    t.paneEl.style.display = (tid === id || (splitTabId && tid === splitTabId && id === prevActiveId)) ? '' : 'none';
     t.tabEl.setAttribute('aria-selected', tid === id ? 'true' : 'false');
     t.tabEl.classList.toggle('active', tid === id);
     // In split mode keep both visible
     if (splitTabId) {
-      const otherSplitId = id === activeTabId ? splitTabId : activeTabId;
+      const otherSplitId = id === prevActiveId ? splitTabId : prevActiveId;
       if (otherSplitId) {
         const other = tabs.get(otherSplitId!);
         if (other) other.paneEl.style.display = '';
@@ -170,6 +176,7 @@ function activateTab(id: string): void {
   });
 
   activeTabId = id;
+  (window as any).__activeTerminal = tabs.get(id)?.terminal ?? null;
   tab.terminal.focus();
 }
 
@@ -179,9 +186,11 @@ async function closeTabById(id: string): Promise<void> {
 
   await window.terminalAPI.closeTerminal(id);
   tab.terminal.dispose();
+  tab.onOutputDispose?.();
   tab.paneEl.remove();
   tab.tabEl.remove();
   tabs.delete(id);
+  tabHistory.delete(id);
 
   if (id === splitTabId) {
     // Remove splitter
@@ -281,22 +290,31 @@ async function submitAIRequest(): Promise<void> {
   aiInput.value = '';
   aiInput.disabled = true;
   aiSubmitBtn.disabled = true;
+  aiSubmitBtn.textContent = '…';
 
   // Get current context from PTY (we approximate cwd as home for now)
   const request = {
     user_input: input,
     input_type: 'text' as const,
-    shell: '/bin/zsh',
+    shell: configuredShell,
     cwd: '~',
     platform: navigator.userAgent.includes('Mac') ? 'darwin'
       : navigator.userAgent.includes('Win') ? 'win32' : 'linux',
-    history: [],
+    history: tabHistory.get(activeTabId) ?? [],
   };
 
-  const result = await window.terminalAPI.interpret(request);
-
-  aiInput.disabled = false;
-  aiSubmitBtn.disabled = false;
+  let result: unknown;
+  try {
+    result = await window.terminalAPI.interpret(request);
+  } catch (err) {
+    const tab = tabs.get(activeTabId);
+    tab?.terminal.writeln(`\r\n\x1b[31m[AI Error] ${(err as Error).message}\x1b[0m\r\n`);
+    return;
+  } finally {
+    aiInput.disabled = false;
+    aiSubmitBtn.disabled = false;
+    aiSubmitBtn.textContent = '↵';
+  }
 
   if (!result || typeof result !== 'object') return;
   const res = result as Record<string, unknown>;
@@ -304,7 +322,7 @@ async function submitAIRequest(): Promise<void> {
   if ('error' in res) {
     // Show error in active terminal
     const tab = tabs.get(activeTabId);
-    tab?.terminal.writeln(`\r\n\x1b[31m[AI Error] ${res.message}\x1b[0m\r\n`);
+    tab?.terminal.writeln(`\r\n\x1b[31m[AI Error] ${res.message ?? res.error}\x1b[0m\r\n`);
     return;
   }
 
@@ -332,6 +350,15 @@ function showPreview(response: {
 previewRunBtn.addEventListener('click', () => {
   if (!pendingCommand || !activeTabId) return;
   window.terminalAPI.executeCommand(activeTabId, pendingCommand.command);
+
+  // Track command in per-tab history (capped at 20)
+  if (activeTabId && pendingCommand) {
+    const hist = tabHistory.get(activeTabId) ?? [];
+    hist.push(pendingCommand.command);
+    if (hist.length > 20) hist.shift();
+    tabHistory.set(activeTabId, hist);
+  }
+
   previewCard.classList.add('hidden');
   pendingCommand = null;
   const tab = tabs.get(activeTabId);
@@ -459,6 +486,7 @@ async function init(): Promise<void> {
 
   currentFontSize = (config.font_size as number) ?? 14;
   document.documentElement.style.setProperty('--font-size', `${currentFontSize}px`);
+  configuredShell = (config.shell as string) ?? '/bin/zsh';
   if (config.font_family) {
     document.documentElement.style.setProperty('--font-family', `'${config.font_family}', monospace`);
   }
