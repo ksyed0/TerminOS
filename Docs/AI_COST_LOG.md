@@ -47,3 +47,16 @@ Updated automatically by the Claude Code stop hook (`tools/capture-cost.js`).
 | 2026-03-16 | 3e71a9f9-ef12-43fd-9c3f-af3408495f96 | HEAD | 64 | 10458 | 1376809 | 2.0960 |
 | 2026-03-16 | a0159feb-40f6-481d-89f1-d5472426f3f4 | HEAD | 150 | 68252 | 11805618 | 6.3690 |
 | 2026-03-16 | 5793a010-c199-4462-af12-cabb0fa9de3e | claude/phase2-provider-handshake | 425 | 72474 | 21536457 | 12.1265 |
+| 2026-03-16 | 5793a010-c199-4462-af12-cabb0fa9de3e | develop | 448 | 79897 | 23057062 | 12.8445 |
+| 2026-03-16 | 5793a010-c199-4462-af12-cabb0fa9de3e | develop | 458 | 81031 | 23490591 | 13.0220 |
+| 2026-03-16 | a3e8d354-855f-4dd3-abfa-e70ab7dafcb9 | develop | 112 | 18119 | 4506178 | 2.8377 |
+| 2026-03-16 | a3e8d354-855f-4dd3-abfa-e70ab7dafcb9 | develop | 118 | 27685 | 4653342 | 3.0431 |
+| 2026-03-17 | a3e8d354-855f-4dd3-abfa-e70ab7dafcb9 | develop | 118 | 27685 | 4653342 | 3.0431 |
+| 2026-03-17 | a3e8d354-855f-4dd3-abfa-e70ab7dafcb9 | develop | 118 | 27685 | 4653342 | 3.0431 |
+| 2026-03-17 | 5f1830bd-f64f-4825-bed8-44c12bd6eb31 | develop | 290 | 975 | 160580 | 0.6223 |
+| 2026-03-17 | 5f1830bd-f64f-4825-bed8-44c12bd6eb31 | fix/e2e-scrollback-race | 319 | 6889 | 1207968 | 1.2464 |
+| 2026-03-17 | 5f1830bd-f64f-4825-bed8-44c12bd6eb31 | fix/e2e-scrollback-race | 331 | 8549 | 1633376 | 1.4272 |
+| 2026-03-17 | 5f1830bd-f64f-4825-bed8-44c12bd6eb31 | fix/e2e-scrollback-race | 0 | 0 | 0 | 0.0000 |
+| 2026-03-17 | 5f1830bd-f64f-4825-bed8-44c12bd6eb31 | fix/e2e-scrollback-race | 0 | 0 | 0 | 0.0000 |
+| 2026-03-17 | 5f1830bd-f64f-4825-bed8-44c12bd6eb31 | fix/e2e-scrollback-race | 0 | 0 | 0 | 0.0000 |
+| 2026-03-17 | 5f1830bd-f64f-4825-bed8-44c12bd6eb31 | fix/e2e-scrollback-race | 0 | 0 | 0 | 0.0000 |
