@@ -14,7 +14,7 @@ import {
   type ColorScheme,
 } from './theme';
 
-import { reorderTab, getTabAtIndex, shouldConfirmClose } from './tabs';
+import { reorderTab, getTabAtIndex, shouldConfirmClose, SPLIT_VERTICAL_CLASS } from './tabs';
 
 // ── Globals injected by preload ───────────────────────────────────────────────
 declare const window: Window & {
@@ -40,7 +40,6 @@ let currentMode: 'dark' | 'light' | 'auto' = 'auto';
 let currentScheme: ColorScheme = DARK_SCHEMES[0];
 let isFirstRun = false;
 const activePtys: Map<string, true> = new Map();
-let _draggedTabId: string | null = null;
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
 const tabBar         = document.getElementById('tab-bar')!;
@@ -103,8 +102,9 @@ async function createTab(splitDir: 'horizontal' | 'vertical' | false = false): P
 
   tabEl.draggable = true;
 
-  tabEl.addEventListener('dragstart', () => {
-    _draggedTabId = id;
+  tabEl.addEventListener('dragstart', (e) => {
+    e.dataTransfer!.setData('text/plain', id);
+    e.dataTransfer!.effectAllowed = 'move';
     tabEl.classList.add('dragging');
   });
 
@@ -114,7 +114,9 @@ async function createTab(splitDir: 'horizontal' | 'vertical' | false = false): P
   });
 
   tabEl.addEventListener('dragover', (e) => {
+    if (!e.dataTransfer?.types.includes('text/plain')) return; // ignore external drags
     e.preventDefault();
+    e.dataTransfer!.dropEffect = 'move';
     tabBar.querySelectorAll('.tab-item').forEach(t => t.classList.remove('drag-over'));
     tabEl.classList.add('drag-over');
   });
@@ -122,10 +124,10 @@ async function createTab(splitDir: 'horizontal' | 'vertical' | false = false): P
   tabEl.addEventListener('drop', (e) => {
     e.preventDefault();
     tabEl.classList.remove('drag-over');
-    if (_draggedTabId && _draggedTabId !== id) {
-      reorderTab(_draggedTabId, id, tabs as unknown as Map<string, { tabEl: HTMLElement; [key: string]: unknown }>, tabBar);
+    const draggedId = e.dataTransfer?.getData('text/plain');
+    if (draggedId && draggedId !== id) {
+      reorderTab(draggedId, id, tabs as unknown as Map<string, { tabEl: HTMLElement; [key: string]: unknown }>, tabBar);
     }
-    _draggedTabId = null;
   });
 
   // Pane element
@@ -148,22 +150,24 @@ async function createTab(splitDir: 'horizontal' | 'vertical' | false = false): P
   terminal.loadAddon(fitAddon);
 
   if (splitDir === 'horizontal' && activeTabId) {
+    if (splitTabId) return id; // already split — ignore
     const splitter = document.createElement('div');
     splitter.className = 'pane-splitter';
     splitter.setAttribute('aria-hidden', 'true');
     paneContainer.appendChild(splitter);
     paneContainer.appendChild(paneEl);
     splitTabId = id;
-    paneContainer.classList.remove('split-vertical');
+    paneContainer.classList.remove(SPLIT_VERTICAL_CLASS);
     setupSplitterDrag(splitter, paneEl);
   } else if (splitDir === 'vertical' && activeTabId) {
+    if (splitTabId) return id; // already split — ignore
     const splitter = document.createElement('div');
     splitter.className = 'pane-splitter-vertical';
     splitter.setAttribute('aria-hidden', 'true');
     paneContainer.appendChild(splitter);
     paneContainer.appendChild(paneEl);
     splitTabId = id;
-    paneContainer.classList.add('split-vertical');
+    paneContainer.classList.add(SPLIT_VERTICAL_CLASS);
     setupSplitterDragVertical(splitter, paneEl);
   } else {
     paneContainer.appendChild(paneEl);
@@ -199,7 +203,6 @@ function activateTab(id: string): void {
   if (!tab) return;
 
   tabs.forEach((t, tid) => {
-    const isSplit = splitTabId === tid && tid !== id;
     t.paneEl.style.display = (tid === id || (splitTabId && tid === splitTabId && id === activeTabId)) ? '' : 'none';
     t.tabEl.setAttribute('aria-selected', tid === id ? 'true' : 'false');
     t.tabEl.classList.toggle('active', tid === id);
@@ -224,14 +227,24 @@ async function closeTabById(id: string): Promise<void> {
   if (shouldConfirmClose(id, activePtys)) {
     let confirmed = false;
     closeConfirmDialog.classList.remove('hidden');
+    closeKeepBtn.focus();
+    const escHandler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        document.removeEventListener('keydown', escHandler);
+        closeKeepBtn.click();
+      }
+    };
+    document.addEventListener('keydown', escHandler);
     await new Promise<void>((resolve) => {
       closeConfirmBtn.addEventListener('click', () => {
         confirmed = true;
+        document.removeEventListener('keydown', escHandler);
         closeConfirmDialog.classList.add('hidden');
         resolve();
       }, { once: true });
       closeKeepBtn.addEventListener('click', () => {
         confirmed = false;
+        document.removeEventListener('keydown', escHandler);
         closeConfirmDialog.classList.add('hidden');
         resolve();
       }, { once: true });
@@ -247,9 +260,10 @@ async function closeTabById(id: string): Promise<void> {
   tabs.delete(id);
 
   if (id === splitTabId) {
-    const splitter = paneContainer.querySelector('.pane-splitter, .pane-splitter-vertical');
+    const splitter = paneContainer.querySelector('.pane-splitter, .pane-splitter-vertical') as (HTMLElement & { _cleanup?: () => void }) | null;
+    splitter?._cleanup?.();
     splitter?.remove();
-    paneContainer.classList.remove('split-vertical');
+    paneContainer.classList.remove(SPLIT_VERTICAL_CLASS);
     splitTabId = null;
   }
 
@@ -262,6 +276,8 @@ async function closeTabById(id: string): Promise<void> {
 
 // ── Splitter drag ──────────────────────────────────────────────────────────────
 function setupSplitterDrag(splitter: HTMLElement, rightPane: HTMLElement): void {
+  const ac = new AbortController();
+  const { signal } = ac;
   let dragging = false;
   let startX = 0;
   let startLeft = 0;
@@ -289,7 +305,7 @@ function setupSplitterDrag(splitter: HTMLElement, rightPane: HTMLElement): void 
     rightPane.style.flex = 'none';
     rightPane.style.width = `${newRight}px`;
     fitAllTerminals();
-  });
+  }, { signal });
 
   document.addEventListener('mouseup', () => {
     if (!dragging) return;
@@ -298,10 +314,15 @@ function setupSplitterDrag(splitter: HTMLElement, rightPane: HTMLElement): void 
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
     fitAllTerminals();
-  });
+  }, { signal });
+
+  // Store cleanup fn on splitter element for later removal
+  (splitter as HTMLElement & { _cleanup?: () => void })._cleanup = () => ac.abort();
 }
 
 function setupSplitterDragVertical(splitter: HTMLElement, bottomPane: HTMLElement): void {
+  const ac = new AbortController();
+  const { signal } = ac;
   let dragging = false;
   let startY = 0;
   let startTop = 0;
@@ -322,14 +343,14 @@ function setupSplitterDragVertical(splitter: HTMLElement, bottomPane: HTMLElemen
     if (!dragging) return;
     const dy = e.clientY - startY;
     const topPane = paneContainer.firstElementChild as HTMLElement;
-    const newTop = Math.max(100, startTop + dy);
-    const newBottom = Math.max(100, startBottom - dy);
+    const newTop = Math.max(200, startTop + dy);
+    const newBottom = Math.max(200, startBottom - dy);
     topPane.style.flex = 'none';
     topPane.style.height = `${newTop}px`;
     bottomPane.style.flex = 'none';
     bottomPane.style.height = `${newBottom}px`;
     fitAllTerminals();
-  });
+  }, { signal });
 
   document.addEventListener('mouseup', () => {
     if (!dragging) return;
@@ -338,7 +359,10 @@ function setupSplitterDragVertical(splitter: HTMLElement, bottomPane: HTMLElemen
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
     fitAllTerminals();
-  });
+  }, { signal });
+
+  // Store cleanup fn on splitter element for later removal
+  (splitter as HTMLElement & { _cleanup?: () => void })._cleanup = () => ac.abort();
 }
 
 // ── Fit and resize ─────────────────────────────────────────────────────────────
@@ -609,6 +633,7 @@ document.addEventListener('keydown', (e) => {
 window.terminalAPI.onExit((tabId, exitCode) => {
   const tab = tabs.get(tabId);
   if (!tab) return;
+  activePtys.delete(tabId);
   tab.terminal.writeln(`\r\n\x1b[90m[Process exited with code ${exitCode}]\x1b[0m`);
 });
 

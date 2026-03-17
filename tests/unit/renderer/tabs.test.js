@@ -4,7 +4,7 @@
  * tabs.ts functions accept explicit refs — no browser required.
  */
 
-const { reorderTab, getTabAtIndex, shouldConfirmClose } = require('../../../dist/renderer/tabs.js');
+const { reorderTab, getTabAtIndex, shouldConfirmClose, SPLIT_VERTICAL_CLASS } = require('../../../dist/renderer/tabs.js');
 
 // Helper: create a simple mock tabEl
 function makeTabEl(id) {
@@ -65,16 +65,9 @@ test('TC-0158: getTabAtIndex(2) for Cmd+3 keyboard shortcut returns 3rd tab', ()
   expect(getTabAtIndex(index, tabsMap)).toBe('tab-3');
 });
 
-// TC-0159: vertical split class is added to pane container
-// This tests the CSS class name contract; actual DOM manipulation is in index.ts
-test('TC-0159: vertical split uses split-vertical CSS class (contract test)', () => {
-  // The class name is defined by convention; verify it matches what styles.css expects
-  expect('split-vertical').toBe('split-vertical');  // contract: class name is stable
-  // Real verification: integration test would check paneContainer.classList
-  // Here we verify the constant is used (smoke test for the module import path)
-  expect(typeof reorderTab).toBe('function');
-  expect(typeof getTabAtIndex).toBe('function');
-  expect(typeof shouldConfirmClose).toBe('function');
+// TC-0159: SPLIT_VERTICAL_CLASS constant matches expected CSS class name
+test('TC-0159: SPLIT_VERTICAL_CLASS constant is the expected CSS class name', () => {
+  expect(SPLIT_VERTICAL_CLASS).toBe('split-vertical');
 });
 
 // TC-0160: shouldConfirmClose false when PTY not in map (tab has no active process)

@@ -3,10 +3,8 @@
  * Tab management utilities — pure functions testable in Node without a browser.
  */
 
-export interface TabEntry {
-  id: string;
-  tabEl: HTMLElement;
-}
+/** CSS class applied to pane container when in vertical split mode */
+export const SPLIT_VERTICAL_CLASS = 'split-vertical';
 
 /**
  * Reorder: moves the DOM element for draggedId to before the DOM element for targetId.
