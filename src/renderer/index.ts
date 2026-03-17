@@ -14,6 +14,8 @@ import {
   type ColorScheme,
 } from './theme';
 
+import { reorderTab, getTabAtIndex, shouldConfirmClose } from './tabs';
+
 // ── Globals injected by preload ───────────────────────────────────────────────
 declare const window: Window & {
   terminalAPI: import('../preload/index').TerminalAPI;
@@ -37,6 +39,8 @@ let currentFontSize = 14;
 let currentMode: 'dark' | 'light' | 'auto' = 'auto';
 let currentScheme: ColorScheme = DARK_SCHEMES[0];
 let isFirstRun = false;
+const activePtys: Map<string, true> = new Map();
+let _draggedTabId: string | null = null;
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
 const tabBar         = document.getElementById('tab-bar')!;
@@ -55,6 +59,9 @@ const previewCancelBtn = document.getElementById('preview-cancel-btn')!;
 const themeOverlay   = document.getElementById('theme-overlay')!;
 const themeApplyBtn  = document.getElementById('theme-apply-btn')!;
 const schemeGrid     = document.getElementById('scheme-grid')!;
+const closeConfirmDialog = document.getElementById('close-confirm-dialog')!;
+const closeConfirmBtn    = document.getElementById('close-confirm-btn')!;
+const closeKeepBtn       = document.getElementById('close-keep-btn')!;
 const settingsPanel  = document.getElementById('settings-panel')!;
 const settingsCloseBtn = document.getElementById('settings-close-btn')!;
 const settingsSaveBtn  = document.getElementById('settings-save-btn')!;
@@ -74,7 +81,7 @@ let _tabCounter = 0;
 function newTabId(): string { return `tab-${++_tabCounter}`; }
 
 // ── Tab management ─────────────────────────────────────────────────────────────
-async function createTab(makeSplit = false): Promise<string> {
+async function createTab(splitDir: 'horizontal' | 'vertical' | false = false): Promise<string> {
   const id = newTabId();
   const title = `Terminal ${_tabCounter}`;
 
@@ -92,6 +99,33 @@ async function createTab(makeSplit = false): Promise<string> {
     const closeBtn = (e.target as HTMLElement).closest('.tab-close');
     if (closeBtn) { closeTabById(id); return; }
     activateTab(id);
+  });
+
+  tabEl.draggable = true;
+
+  tabEl.addEventListener('dragstart', () => {
+    _draggedTabId = id;
+    tabEl.classList.add('dragging');
+  });
+
+  tabEl.addEventListener('dragend', () => {
+    tabEl.classList.remove('dragging');
+    tabBar.querySelectorAll('.tab-item').forEach(t => t.classList.remove('drag-over'));
+  });
+
+  tabEl.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    tabBar.querySelectorAll('.tab-item').forEach(t => t.classList.remove('drag-over'));
+    tabEl.classList.add('drag-over');
+  });
+
+  tabEl.addEventListener('drop', (e) => {
+    e.preventDefault();
+    tabEl.classList.remove('drag-over');
+    if (_draggedTabId && _draggedTabId !== id) {
+      reorderTab(_draggedTabId, id, tabs as unknown as Map<string, { tabEl: HTMLElement; [key: string]: unknown }>, tabBar);
+    }
+    _draggedTabId = null;
   });
 
   // Pane element
@@ -113,15 +147,24 @@ async function createTab(makeSplit = false): Promise<string> {
   const fitAddon = new FitAddon();
   terminal.loadAddon(fitAddon);
 
-  if (makeSplit && activeTabId) {
-    // Splitter mode: add a split handle then the new pane
+  if (splitDir === 'horizontal' && activeTabId) {
     const splitter = document.createElement('div');
     splitter.className = 'pane-splitter';
     splitter.setAttribute('aria-hidden', 'true');
     paneContainer.appendChild(splitter);
     paneContainer.appendChild(paneEl);
     splitTabId = id;
+    paneContainer.classList.remove('split-vertical');
     setupSplitterDrag(splitter, paneEl);
+  } else if (splitDir === 'vertical' && activeTabId) {
+    const splitter = document.createElement('div');
+    splitter.className = 'pane-splitter-vertical';
+    splitter.setAttribute('aria-hidden', 'true');
+    paneContainer.appendChild(splitter);
+    paneContainer.appendChild(paneEl);
+    splitTabId = id;
+    paneContainer.classList.add('split-vertical');
+    setupSplitterDragVertical(splitter, paneEl);
   } else {
     paneContainer.appendChild(paneEl);
   }
@@ -144,6 +187,7 @@ async function createTab(makeSplit = false): Promise<string> {
   // Spawn PTY
   fitAddon.fit();
   await window.terminalAPI.spawnTerminal(id, terminal.cols, terminal.rows);
+  activePtys.set(id, true);
 
   terminal.focus();
   activateTab(id);
@@ -177,6 +221,25 @@ async function closeTabById(id: string): Promise<void> {
   const tab = tabs.get(id);
   if (!tab) return;
 
+  if (shouldConfirmClose(id, activePtys)) {
+    let confirmed = false;
+    closeConfirmDialog.classList.remove('hidden');
+    await new Promise<void>((resolve) => {
+      closeConfirmBtn.addEventListener('click', () => {
+        confirmed = true;
+        closeConfirmDialog.classList.add('hidden');
+        resolve();
+      }, { once: true });
+      closeKeepBtn.addEventListener('click', () => {
+        confirmed = false;
+        closeConfirmDialog.classList.add('hidden');
+        resolve();
+      }, { once: true });
+    });
+    if (!confirmed) return;
+  }
+
+  activePtys.delete(id);
   await window.terminalAPI.closeTerminal(id);
   tab.terminal.dispose();
   tab.paneEl.remove();
@@ -184,9 +247,9 @@ async function closeTabById(id: string): Promise<void> {
   tabs.delete(id);
 
   if (id === splitTabId) {
-    // Remove splitter
-    const splitter = paneContainer.querySelector('.pane-splitter');
+    const splitter = paneContainer.querySelector('.pane-splitter, .pane-splitter-vertical');
     splitter?.remove();
+    paneContainer.classList.remove('split-vertical');
     splitTabId = null;
   }
 
@@ -225,6 +288,46 @@ function setupSplitterDrag(splitter: HTMLElement, rightPane: HTMLElement): void 
     leftPane.style.width = `${newLeft}px`;
     rightPane.style.flex = 'none';
     rightPane.style.width = `${newRight}px`;
+    fitAllTerminals();
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    splitter.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    fitAllTerminals();
+  });
+}
+
+function setupSplitterDragVertical(splitter: HTMLElement, bottomPane: HTMLElement): void {
+  let dragging = false;
+  let startY = 0;
+  let startTop = 0;
+  let startBottom = 0;
+
+  splitter.addEventListener('mousedown', (e) => {
+    dragging = true;
+    startY = e.clientY;
+    const topPane = paneContainer.firstElementChild as HTMLElement;
+    startTop = topPane.getBoundingClientRect().height;
+    startBottom = bottomPane.getBoundingClientRect().height;
+    splitter.classList.add('dragging');
+    document.body.style.cursor = 'row-resize';
+    document.body.style.userSelect = 'none';
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    const dy = e.clientY - startY;
+    const topPane = paneContainer.firstElementChild as HTMLElement;
+    const newTop = Math.max(100, startTop + dy);
+    const newBottom = Math.max(100, startBottom - dy);
+    topPane.style.flex = 'none';
+    topPane.style.height = `${newTop}px`;
+    bottomPane.style.flex = 'none';
+    bottomPane.style.height = `${newBottom}px`;
     fitAllTerminals();
   });
 
@@ -486,10 +589,20 @@ themeApplyBtn.addEventListener('click', async () => {
 
 newTabBtn.addEventListener('click', () => createTab());
 
-// Keyboard shortcut: Cmd/Ctrl+T = new tab, Cmd/Ctrl+Shift+D = split
+// Keyboard shortcuts: Cmd/Ctrl+T = new tab, Cmd/Ctrl+Shift+D = horizontal split,
+// Cmd/Ctrl+Shift+E = vertical split, Cmd/Ctrl+1-9 = activate tab by index
 document.addEventListener('keydown', (e) => {
-  if ((e.metaKey || e.ctrlKey) && e.key === 't') { e.preventDefault(); createTab(); }
-  if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'd') { e.preventDefault(); createTab(true); }
+  const isMeta = e.metaKey || e.ctrlKey;
+  if (!isMeta) return;
+  if (e.key === 't') { e.preventDefault(); createTab(); }
+  if (e.shiftKey && e.key === 'd') { e.preventDefault(); createTab('horizontal'); }
+  if (e.shiftKey && e.key === 'e') { e.preventDefault(); createTab('vertical'); }
+  if (!e.shiftKey && e.key >= '1' && e.key <= '9') {
+    e.preventDefault();
+    const index = parseInt(e.key, 10) - 1;
+    const tabId = getTabAtIndex(index, tabs);
+    if (tabId) activateTab(tabId);
+  }
 });
 
 // PTY exit notification
