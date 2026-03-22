@@ -374,6 +374,45 @@ Types: `feat`, `fix`, `test`, `docs`, `refactor`, `chore`, `style`, `perf`
 
 > **Rule:** If it isn't in version control, it doesn't exist. If it isn't on a branch, it isn't safe.
 
+### 11b. GitHub Actions CI/CD — Known Fixes & Workflow Standards
+
+This project uses GitHub Actions with branch protection on `main` and `develop` (Lint + Test + Dependency Audit required).
+
+#### Version-bump workflow fix
+
+There is a workflow that auto-bumps the patch version when a PR merges to `develop`. It creates a chore branch, commits the version bump, opens a PR, then merges it via `gh pr merge --auto`. This stalls indefinitely because:
+- The commit message contains `[skip ci]`, preventing required CI checks from running
+- `--auto` waits for those checks to pass before merging — they never will
+
+**Fix applied:**
+- Use `gh pr merge "$BUMP_BRANCH" --squash --admin` (not `--auto`)
+- Remove `[skip ci]` from the commit message and PR title (no longer needed)
+- `--admin` bypasses branch protection immediately (works when `enforce_admins: false`)
+
+#### Release-tag workflow (`.github/workflows/release-tag.yml`)
+
+A workflow exists that:
+- Triggers on `pull_request: types: [closed]` targeting `main`
+- Runs only when `github.event.pull_request.merged == true`
+- Reads the version from `package.json` using `jq -r .version`
+- Creates an annotated git tag `v{version}` on the merged main commit
+- Creates a GitHub Release with `gh release create --generate-notes`
+- Is idempotent: skips if the tag already exists (`git ls-remote --tags origin "$VERSION" | grep -q "$VERSION"`)
+- Requires `permissions: contents: write`
+- Uses `actions/checkout` with `fetch-depth: 0` so all tags are available
+
+#### Retroactive tagging of main
+
+After merging the workflow PR, tag the current `main` HEAD manually:
+
+```bash
+git tag -a v$(jq -r .version package.json) HEAD -m "Release v$(jq -r .version package.json)"
+git push origin v$(jq -r .version package.json)
+gh release create v$(jq -r .version package.json) --generate-notes
+```
+
+> **Rule:** All workflow fix PRs must target `develop`, not `main` directly.
+
 ---
 
 ### 12. Security & Secrets Standards
@@ -633,3 +672,11 @@ Post-rollback:
 Periodically, at the start of a new session, analyze the entire project and all its files **before** reading instruction files and memory. Flag issues, inconsistencies, or problems. This is the equivalent of an independent code audit.
 
 After the review is complete, proceed with the normal session startup sequence.
+
+---
+
+## PlanVisualizer Format Requirements
+
+This project uses PlanVisualizer. Read **plan_visualizer.md** (in this project root) for the
+exact document formats required for RELEASE_PLAN.md, TEST_CASES.md, BUGS.md, AI_COST_LOG.md,
+and progress.md. Consult it whenever creating or updating any of these files.
