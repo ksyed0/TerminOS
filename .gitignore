@@ -31,7 +31,8 @@ Thumbs.db
 
 # Test and coverage artifacts
 .coverage
-coverage/
+/coverage/
+docs/coverage/
 htmlcov/
 .pytest_cache/
 .mypy_cache/
