@@ -201,6 +201,29 @@ Lesson Encoded: No
 
 ---
 
+```
+BUG-0012: Plan visualizer shows blank status/priority tags and "No ACs yet" for all user stories
+Severity: Medium
+Related Story: US-0001
+Related Task: None
+Steps to Reproduce:
+  1. Open the plan visualizer at https://ksyed0.github.io/TermnOS/
+  2. View any user story in the Hierarchy tab.
+  3. Observe: status badge is empty, priority badge is empty, "No ACs yet" shown.
+Expected: Status (e.g. Done), priority (e.g. High), and all AC items are rendered for each story.
+Actual: All three fields were blank/missing for every user story.
+Status: Fixed
+Fix Branch: chore/session-close-epic0001
+Fix: Replaced blank-line split (\n{2,}) in parseReleasePlan with splitBlockIntoRecords(),
+     which starts a new chunk only at EPIC-/US-/TASK- ID lines. The old split fragmented
+     each story block (which uses blank lines between Description, Priority, and ACs
+     sections) so only the title-only first chunk was parsed. The test fixture had no
+     internal blank lines, so tests passed while real data silently lost all metadata.
+Lesson Encoded: Yes — see docs/LESSONS.md
+```
+
+---
+
 ## Format Reference
 
 ```
