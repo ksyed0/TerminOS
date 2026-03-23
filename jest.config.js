@@ -26,6 +26,7 @@ module.exports = {
     'dist/renderer/preview.js',
     'dist/renderer/tabs.js',
   ],
+  coverageDirectory: 'docs/coverage',
   coverageReporters: ['text', 'lcov', 'json-summary'],
   coverageThreshold: {
     global: {
