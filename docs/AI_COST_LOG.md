@@ -80,3 +80,6 @@ Updated automatically by the Claude Code stop hook (`tools/capture-cost.js`).
 | 2026-03-17 | 5f1830bd-f64f-4825-bed8-44c12bd6eb31 | fix/e2e-scrollback-race | 0 | 0 | 0 | 0.0000 |
 | 2026-03-17 | 5f1830bd-f64f-4825-bed8-44c12bd6eb31 | fix/e2e-scrollback-race | 0 | 0 | 0 | 0.0000 |
 | 2026-03-17 | 5f1830bd-f64f-4825-bed8-44c12bd6eb31 | fix/e2e-scrollback-race | 0 | 0 | 0 | 0.0000 |
+| 2026-03-17 | 60d35641-5896-473a-ac9f-ccdde8595515 | chore/session-close-epic0001 | 0 | 0 | 0 | 0.0000 |
+| 2026-03-22 | 510e6325-61d5-4e71-b58c-6ac38919bc35 | chore/session-close-epic0001 | 0 | 0 | 0 | 0.0000 |
+| 2026-03-22 | 1d2e6de8-18f9-4dcc-9dc3-83dde72adf15 | chore/session-close-epic0001 | 0 | 0 | 0 | 0.0000 |

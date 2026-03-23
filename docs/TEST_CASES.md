@@ -1,4 +1,4 @@
-# Docs/TEST_CASES.md — Test Case Register
+# docs/TEST_CASES.md — Test Case Register
 
 > Human-readable test cases linked to user stories and acceptance criteria. One TC per AC minimum. See AGENTS.md §10 for format standards.
 

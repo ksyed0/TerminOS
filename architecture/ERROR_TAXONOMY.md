@@ -50,7 +50,7 @@
 - Log with full stack trace and correlation_id
 - Return HTTP 500 with a generic user-facing message — never expose internals
 - Alert on-call / monitoring immediately
-- Investigate root cause and encode fix in `Docs/LESSONS.md`
+- Investigate root cause and encode fix in `docs/LESSONS.md`
 
 **Example:** Unhandled exception, null pointer in unexpected code path, file system failure.
 

@@ -1,4 +1,4 @@
-# Docs/ROLLBACK.md — Rollback Procedures
+# docs/ROLLBACK.md — Rollback Procedures
 
 > A rollback plan must be documented here before any deployment begins. See AGENTS.md §20 for rules and the full pre-deployment checklist.
 

@@ -10,10 +10,10 @@
 - Created `AGENTS.md` with full AI Agent Operating Standards
 - Created project scaffold: all directories and files from the File & Deliverable Structure table
   - `PROJECT.md`, `MEMORY.md`, `PROMPT_LOG.md`, `MIGRATION_LOG.md`, `findings.md`, `task_plan.md`
-  - `Docs/RELEASE_PLAN.md`, `Docs/TEST_CASES.md`, `Docs/BUGS.md`, `Docs/ID_REGISTRY.md`, `Docs/LESSONS.md`, `Docs/ROLLBACK.md`
+  - `docs/RELEASE_PLAN.md`, `docs/TEST_CASES.md`, `docs/BUGS.md`, `docs/ID_REGISTRY.md`, `docs/LESSONS.md`, `docs/ROLLBACK.md`
   - `architecture/ERROR_TAXONOMY.md`
   - `.gitignore`, `.env.example`
-  - Directories: `tools/`, `tests/`, `architecture/`, `Docs/`, `.tmp/`
+  - Directories: `tools/`, `tests/`, `architecture/`, `docs/`, `.tmp/`
 
 ### Blockers
 - Discovery Questions in `PROJECT.md` §1 unanswered → resolved in Session 2
@@ -101,7 +101,7 @@
   - US-0012 (Packaging): AC-0083–0088
   - US-0013 (Settings UI): AC-0089–0095
   - US-0014 (Plugin System): AC-0096–0102
-- **Test cases created:** TC-0001–TC-0107 (107 total) in Docs/TEST_CASES.md.
+- **Test cases created:** TC-0001–TC-0107 (107 total) in docs/TEST_CASES.md.
   - One TC per AC minimum; additional edge case, negative, security, and accessibility TCs included.
   - Coverage: Functional, Negative, Edge Case, Security, Accessibility, Performance.
 - **ID Registry updated:** AC next AC-0103, TC next TC-0108.
