@@ -1,4 +1,4 @@
-# Docs/BUGS.md — Bug & Defect Register
+# docs/BUGS.md — Bug & Defect Register
 
 > All bugs and defects tracked here with BUG-XXXX identifiers. See AGENTS.md §9 for format standards.
 
@@ -215,5 +215,5 @@ Expected: [What should happen]
 Actual: [What actually happened]
 Status: [Open | In Progress | Fixed | Verified | Closed]
 Fix Branch: [bugfix/BUG-0001-short-description]
-Lesson Encoded: [Yes — see Docs/LESSONS.md | No]
+Lesson Encoded: [Yes — see docs/LESSONS.md | No]
 ```

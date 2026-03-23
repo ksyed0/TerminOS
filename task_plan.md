@@ -95,7 +95,7 @@ Next: Phase 4 (Integration Testing & e2e) — Playwright/Spectron, PTY↔xterm r
 
 ## Phase 5: T — Trigger (Deployment Checklist)
 
-- [ ] `Docs/ROLLBACK.md` completed for this release
+- [ ] `docs/ROLLBACK.md` completed for this release
 - [ ] Production version tagged in Git
 - [ ] Database migrations are reversible
 - [ ] Smoke test plan defined and executed

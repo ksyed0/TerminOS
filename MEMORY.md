@@ -137,7 +137,7 @@ _None._
 
 ## Hard-Won Lessons (Quick Reference)
 
-> Full details in `Docs/LESSONS.md`.
+> Full details in `docs/LESSONS.md`.
 
 **Always call `warnSpy.mockRestore()` before asserting on console.warn.** *Learned when a `console.warn` mock in a prior test leaked into the next test because mockRestore() was missing, causing spurious assertion failures.*
 
@@ -170,7 +170,7 @@ Excluded (untestable without Electron/browser runtime): `dist/main/index.js`, `d
 |----------|---------|----------|
 | `ci.yml` | push/PR to main, develop | lint → build → test:coverage → audit |
 | `e2e.yml` | push/PR | install → build → xvfb-run playwright test |
-| `plan-visualizer.yml` | push to main/develop (Docs/ paths) or workflow_dispatch | generate-plan → upload-pages → deploy-pages |
+| `plan-visualizer.yml` | push to main/develop (docs/ paths) or workflow_dispatch | generate-plan → upload-pages → deploy-pages |
 
 **Path note:** GitHub Pages artifact path is `./Docs` (capital D) — matches the actual directory.
 

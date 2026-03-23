@@ -31,7 +31,7 @@ Main Process → IPC handler (src/main/ipc/)
 
 ## Adding a New Provider
 
-1. Assign next available ID in `Docs/ID_REGISTRY.md`
+1. Assign next available ID in `docs/ID_REGISTRY.md`
 2. Create `src/main/providers/<name>.ts` implementing `AIProvider`
 3. Add case to `factory.ts` switch statement
 4. Add to `ProviderConfig.provider` union type in `interface.ts`

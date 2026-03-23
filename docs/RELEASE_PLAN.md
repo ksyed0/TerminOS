@@ -1,4 +1,4 @@
-# Docs/RELEASE_PLAN.md — Release Plan & Backlog
+# docs/RELEASE_PLAN.md — Release Plan & Backlog
 
 > Living document. Update whenever scope, priorities, or architecture change. See AGENTS.md §9 for full format standards.
 
