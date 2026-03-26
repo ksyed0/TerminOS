@@ -96,3 +96,10 @@ Updated automatically by the Claude Code stop hook (`tools/capture-cost.js`).
 | 2026-03-26 | cd520052-6ca0-4f17-a1a4-a077d9528d38 | chore/session-close-epic0001 | 0 | 0 | 0 | 0.0000 |
 | 2026-03-26 | 1d2e6de8-18f9-4dcc-9dc3-83dde72adf15 | chore/session-close-epic0001 | 304 | 13173 | 12402166 | 5.3389 |
 | 2026-03-26 | cd520052-6ca0-4f17-a1a4-a077d9528d38 | chore/session-close-epic0001 | 54 | 1228 | 821966 | 0.8371 |
+| 2026-03-26 | cd520052-6ca0-4f17-a1a4-a077d9528d38 | develop | 63 | 2101 | 1368637 | 1.0441 |
+
+<!-- BACKFILL 2026-03-26: corrected rows parsed from transcript JSONL for sessions whose Stop hook wrote zero rows (transcript not yet flushed when hook ran, or hook ran before fix). -->
+| 2026-03-17 | 60d35641-5896-473a-ac9f-ccdde8595515 | chore/session-close-epic0001 | 250 | 27377 | 22185386 | 9.3828 |
+| 2026-03-22 | 510e6325-61d5-4e71-b58c-6ac38919bc35 | chore/session-close-epic0001 | 9 | 1087 | 326625 | 0.5782 |
+| 2026-03-26 | c74ef942-9648-470a-a7b8-ccac3a325613 | develop | 7 | 176 | 234810 | 0.4197 |
+| 2026-03-26 | c74ef942-9648-470a-a7b8-ccac3a325613 | develop | 11 | 1274 | 488138 | 0.5523 |
