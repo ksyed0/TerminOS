@@ -84,3 +84,15 @@ Updated automatically by the Claude Code stop hook (`tools/capture-cost.js`).
 | 2026-03-22 | 510e6325-61d5-4e71-b58c-6ac38919bc35 | chore/session-close-epic0001 | 0 | 0 | 0 | 0.0000 |
 | 2026-03-22 | 1d2e6de8-18f9-4dcc-9dc3-83dde72adf15 | chore/session-close-epic0001 | 0 | 0 | 0 | 0.0000 |
 | 2026-03-23 | 1d2e6de8-18f9-4dcc-9dc3-83dde72adf15 | chore/session-close-epic0001 | 0 | 0 | 0 | 0.0000 |
+| 2026-03-23 | 1d2e6de8-18f9-4dcc-9dc3-83dde72adf15 | chore/session-close-epic0001 | 0 | 0 | 0 | 0.0000 |
+| 2026-03-23 | 1d2e6de8-18f9-4dcc-9dc3-83dde72adf15 | chore/session-close-epic0001 | 0 | 0 | 0 | 0.0000 |
+| 2026-03-23 | 1d2e6de8-18f9-4dcc-9dc3-83dde72adf15 | chore/session-close-epic0001 | 0 | 0 | 0 | 0.0000 |
+| 2026-03-23 | 1d2e6de8-18f9-4dcc-9dc3-83dde72adf15 | chore/session-close-epic0001 | 0 | 0 | 0 | 0.0000 |
+| 2026-03-23 | 1d2e6de8-18f9-4dcc-9dc3-83dde72adf15 | chore/session-close-epic0001 | 0 | 0 | 0 | 0.0000 |
+| 2026-03-23 | 1d2e6de8-18f9-4dcc-9dc3-83dde72adf15 | chore/session-close-epic0001 | 0 | 0 | 0 | 0.0000 |
+| 2026-03-23 | 1d2e6de8-18f9-4dcc-9dc3-83dde72adf15 | chore/session-close-epic0001 | 0 | 0 | 0 | 0.0000 |
+| 2026-03-23 | 1d2e6de8-18f9-4dcc-9dc3-83dde72adf15 | chore/session-close-epic0001 | 0 | 0 | 0 | 0.0000 |
+| 2026-03-26 | test | chore/session-close-epic0001 | 100 | 200 | 300 | 1.2300 |
+| 2026-03-26 | cd520052-6ca0-4f17-a1a4-a077d9528d38 | chore/session-close-epic0001 | 0 | 0 | 0 | 0.0000 |
+| 2026-03-26 | 1d2e6de8-18f9-4dcc-9dc3-83dde72adf15 | chore/session-close-epic0001 | 304 | 13173 | 12402166 | 5.3389 |
+| 2026-03-26 | cd520052-6ca0-4f17-a1a4-a077d9528d38 | chore/session-close-epic0001 | 54 | 1228 | 821966 | 0.8371 |
