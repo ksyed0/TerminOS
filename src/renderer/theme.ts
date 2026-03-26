@@ -54,7 +54,7 @@ export const DARK_SCHEMES: ColorScheme[] = [
   },
   {
     name: 'Solarized Dark',
-    bg: '#002b36', fg: '#839496', bg2: '#073642', bg3: '#073642',
+    bg: '#002b36', fg: '#93a1a1', bg2: '#073642', bg3: '#073642',
     border: '#586e75', cursor: '#839496', selectionBackground: '#073642',
     black: '#073642', red: '#dc322f', green: '#859900', yellow: '#b58900',
     blue: '#268bd2', magenta: '#d33682', cyan: '#2aa198', white: '#eee8d5',
@@ -107,7 +107,7 @@ export const LIGHT_SCHEMES: ColorScheme[] = [
   },
   {
     name: 'Solarized Light',
-    bg: '#fdf6e3', fg: '#657b83', bg2: '#eee8d5', bg3: '#e8e2d0',
+    bg: '#fdf6e3', fg: '#4d5f68', bg2: '#eee8d5', bg3: '#e8e2d0',
     border: '#cdc8b7', cursor: '#657b83', selectionBackground: '#eee8d5',
     black: '#073642', red: '#dc322f', green: '#859900', yellow: '#b58900',
     blue: '#268bd2', magenta: '#d33682', cyan: '#2aa198', white: '#eee8d5',

@@ -433,3 +433,72 @@ html, body {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+
+<<<<<<< HEAD
+/* ── Vertical splitter ──────────────────────────────────────────────────────── */
+.pane-splitter-vertical {
+  height: 4px;
+  width: 100%;
+  background: var(--border);
+  cursor: row-resize;
+  flex-shrink: 0;
+}
+
+.pane-splitter-vertical.dragging {
+  background: var(--accent);
+}
+
+/* ── Vertical split layout ──────────────────────────────────────────────────── */
+#pane-container.split-vertical {
+  flex-direction: column;
+}
+
+/* ── Drag reorder indicator ─────────────────────────────────────────────────── */
+.tab-item.drag-over {
+  border-left: 2px solid var(--accent);
+}
+
+/* ── Close confirm modal ────────────────────────────────────────────────────── */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px;
+  min-width: 300px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  justify-content: flex-end;
+}
+
+/* ── Preview edit input ──────────────────────────────────────────────────────── */
+.preview-edit-input {
+  font-family: var(--font-family, 'JetBrains Mono', monospace);
+  font-size: var(--font-size, 14px);
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--bg3);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px;
+  resize: vertical;
+  min-height: 2em;
+}

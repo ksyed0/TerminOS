@@ -31,7 +31,8 @@ Thumbs.db
 
 # Test and coverage artifacts
 .coverage
-coverage/
+/coverage/
+docs/coverage/
 htmlcov/
 .pytest_cache/
 .mypy_cache/
@@ -42,3 +43,7 @@ test-results/
 # Logs (application logs — not project tracking files)
 *.log
 .worktrees/
+
+# Generated plan-visualizer artefacts (not committed — regenerated from source)
+Docs/plan-status.html
+Docs/plan-status.json
