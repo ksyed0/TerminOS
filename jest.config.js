@@ -2,6 +2,9 @@
 module.exports = {
   testEnvironment: 'node',
   testMatch: ['**/tests/unit/**/*.test.js'],
+  // Exclude git worktrees — their tests/ directories are picked up by the **
+  // glob above and must be ignored to avoid false failures from in-progress work.
+  testPathIgnorePatterns: ['/node_modules/', '\\.worktrees/'],
   // Redirect TypeScript source imports to compiled JS output in dist/
   moduleNameMapper: {
     '^((?:.*/)?)src/(.+)\\.js$': '$1dist/$2.js',
@@ -20,7 +23,10 @@ module.exports = {
     'dist/main/providers/factory.js',
     'dist/main/pty/manager.js',
     'dist/renderer/theme.js',
+    'dist/renderer/preview.js',
+    'dist/renderer/tabs.js',
   ],
+  coverageDirectory: 'docs/coverage',
   coverageReporters: ['text', 'lcov', 'json-summary'],
   coverageThreshold: {
     global: {

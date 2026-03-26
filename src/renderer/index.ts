@@ -14,6 +14,13 @@ import {
   type ColorScheme,
 } from './theme';
 
+import { reorderTab, getTabAtIndex, shouldConfirmClose, SPLIT_VERTICAL_CLASS } from './tabs';
+import {
+  showPreview as _showPreview, hidePreview, enterEditMode, exitEditMode,
+  getEditedCommand, getPendingCommand, isEditMode,
+  type PreviewRefs, type PreviewResponse,
+} from './preview';
+
 // ── Globals injected by preload ───────────────────────────────────────────────
 declare const window: Window & {
   terminalAPI: import('../preload/index').TerminalAPI;
@@ -38,6 +45,7 @@ let currentFontSize = 14;
 let currentMode: 'dark' | 'light' | 'auto' = 'auto';
 let currentScheme: ColorScheme = DARK_SCHEMES[0];
 let isFirstRun = false;
+const activePtys: Map<string, true> = new Map();
 let configuredShell = '/bin/zsh';
 const tabHistory: Map<string, string[]> = new Map();
 
@@ -54,10 +62,15 @@ const previewExp     = document.getElementById('preview-explanation')!;
 const riskBadge      = document.getElementById('risk-badge')!;
 const confirmDialog  = document.getElementById('confirm-dialog')!;
 const previewRunBtn  = document.getElementById('preview-run-btn')!;
+const previewEditBtn  = document.getElementById('preview-edit-btn')!;
 const previewCancelBtn = document.getElementById('preview-cancel-btn')!;
+const previewEditInput = document.getElementById('preview-edit-input') as HTMLTextAreaElement;
 const themeOverlay   = document.getElementById('theme-overlay')!;
 const themeApplyBtn  = document.getElementById('theme-apply-btn')!;
 const schemeGrid     = document.getElementById('scheme-grid')!;
+const closeConfirmDialog = document.getElementById('close-confirm-dialog')!;
+const closeConfirmBtn    = document.getElementById('close-confirm-btn')!;
+const closeKeepBtn       = document.getElementById('close-keep-btn')!;
 const settingsPanel  = document.getElementById('settings-panel')!;
 const settingsCloseBtn = document.getElementById('settings-close-btn')!;
 const settingsSaveBtn  = document.getElementById('settings-save-btn')!;
@@ -72,12 +85,17 @@ const shellInput      = document.getElementById('shell-input') as HTMLInputEleme
 const fontFamilyInput = document.getElementById('font-family-input') as HTMLInputElement;
 const fontSizeInput   = document.getElementById('font-size-input') as HTMLInputElement;
 
+// ── Preview refs ───────────────────────────────────────────────────────────────
+const previewRefs: PreviewRefs = {
+  previewCard, previewCmd, previewExp, riskBadge, confirmDialog, previewEditInput,
+};
+
 // ── ID generation ──────────────────────────────────────────────────────────────
 let _tabCounter = 0;
 function newTabId(): string { return `tab-${++_tabCounter}`; }
 
 // ── Tab management ─────────────────────────────────────────────────────────────
-async function createTab(makeSplit = false): Promise<string> {
+async function createTab(splitDir: 'horizontal' | 'vertical' | false = false): Promise<string> {
   const id = newTabId();
   const title = `Terminal ${_tabCounter}`;
 
@@ -97,6 +115,36 @@ async function createTab(makeSplit = false): Promise<string> {
     activateTab(id);
   });
 
+  tabEl.draggable = true;
+
+  tabEl.addEventListener('dragstart', (e) => {
+    e.dataTransfer!.setData('text/plain', id);
+    e.dataTransfer!.effectAllowed = 'move';
+    tabEl.classList.add('dragging');
+  });
+
+  tabEl.addEventListener('dragend', () => {
+    tabEl.classList.remove('dragging');
+    tabBar.querySelectorAll('.tab-item').forEach(t => t.classList.remove('drag-over'));
+  });
+
+  tabEl.addEventListener('dragover', (e) => {
+    if (!e.dataTransfer?.types.includes('text/plain')) return; // ignore external drags
+    e.preventDefault();
+    e.dataTransfer!.dropEffect = 'move';
+    tabBar.querySelectorAll('.tab-item').forEach(t => t.classList.remove('drag-over'));
+    tabEl.classList.add('drag-over');
+  });
+
+  tabEl.addEventListener('drop', (e) => {
+    e.preventDefault();
+    tabEl.classList.remove('drag-over');
+    const draggedId = e.dataTransfer?.getData('text/plain');
+    if (draggedId && draggedId !== id) {
+      reorderTab(draggedId, id, tabs as unknown as Map<string, { tabEl: HTMLElement; [key: string]: unknown }>, tabBar);
+    }
+  });
+
   // Pane element
   const paneEl = document.createElement('div');
   paneEl.className = 'terminal-pane';
@@ -106,30 +154,43 @@ async function createTab(makeSplit = false): Promise<string> {
 
   // xterm.js
   const terminal = new Terminal({
-    fontFamily: currentScheme.bg === '#ffffff' || currentScheme.bg === '#fdf6e3'
-      ? `'JetBrains Mono', monospace` : `'JetBrains Mono', monospace`,
+    fontFamily: `'JetBrains Mono', monospace`,
     fontSize: currentFontSize,
     theme: toXtermTheme(currentScheme),
     cursorBlink: true,
     allowTransparency: false,
+    scrollback: 1000,
   });
   const fitAddon = new FitAddon();
   terminal.loadAddon(fitAddon);
 
-  if (makeSplit && activeTabId) {
-    // Splitter mode: add a split handle then the new pane
+  if (splitDir === 'horizontal' && activeTabId) {
+    if (splitTabId) return id; // already split — ignore
     const splitter = document.createElement('div');
     splitter.className = 'pane-splitter';
     splitter.setAttribute('aria-hidden', 'true');
     paneContainer.appendChild(splitter);
     paneContainer.appendChild(paneEl);
     splitTabId = id;
+    paneContainer.classList.remove(SPLIT_VERTICAL_CLASS);
     setupSplitterDrag(splitter, paneEl);
+  } else if (splitDir === 'vertical' && activeTabId) {
+    if (splitTabId) return id; // already split — ignore
+    const splitter = document.createElement('div');
+    splitter.className = 'pane-splitter-vertical';
+    splitter.setAttribute('aria-hidden', 'true');
+    paneContainer.appendChild(splitter);
+    paneContainer.appendChild(paneEl);
+    splitTabId = id;
+    paneContainer.classList.add(SPLIT_VERTICAL_CLASS);
+    setupSplitterDragVertical(splitter, paneEl);
   } else {
     paneContainer.appendChild(paneEl);
   }
 
   terminal.open(paneEl);
+  // Test hook — expose active terminal for e2e scrollback assertion
+  (window as any).__activeTerminal = terminal;
 
   // Forward PTY output
   const onOutputDispose = window.terminalAPI.onOutput((tabId, data) => {
@@ -147,6 +208,7 @@ async function createTab(makeSplit = false): Promise<string> {
   // Spawn PTY
   fitAddon.fit();
   await window.terminalAPI.spawnTerminal(id, terminal.cols, terminal.rows);
+  activePtys.set(id, true);
 
   terminal.focus();
   activateTab(id);
@@ -159,7 +221,6 @@ function activateTab(id: string): void {
 
   const prevActiveId = activeTabId;
   tabs.forEach((t, tid) => {
-    const isSplit = splitTabId === tid && tid !== id;
     t.paneEl.style.display = (tid === id || (splitTabId && tid === splitTabId && id === prevActiveId)) ? '' : 'none';
     t.tabEl.setAttribute('aria-selected', tid === id ? 'true' : 'false');
     t.tabEl.classList.toggle('active', tid === id);
@@ -174,6 +235,7 @@ function activateTab(id: string): void {
   });
 
   activeTabId = id;
+  (window as any).__activeTerminal = tabs.get(id)?.terminal ?? null;
   tab.terminal.focus();
 }
 
@@ -181,6 +243,35 @@ async function closeTabById(id: string): Promise<void> {
   const tab = tabs.get(id);
   if (!tab) return;
 
+  if (shouldConfirmClose(id, activePtys)) {
+    let confirmed = false;
+    closeConfirmDialog.classList.remove('hidden');
+    closeKeepBtn.focus();
+    const escHandler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        document.removeEventListener('keydown', escHandler);
+        closeKeepBtn.click();
+      }
+    };
+    document.addEventListener('keydown', escHandler);
+    await new Promise<void>((resolve) => {
+      closeConfirmBtn.addEventListener('click', () => {
+        confirmed = true;
+        document.removeEventListener('keydown', escHandler);
+        closeConfirmDialog.classList.add('hidden');
+        resolve();
+      }, { once: true });
+      closeKeepBtn.addEventListener('click', () => {
+        confirmed = false;
+        document.removeEventListener('keydown', escHandler);
+        closeConfirmDialog.classList.add('hidden');
+        resolve();
+      }, { once: true });
+    });
+    if (!confirmed) return;
+  }
+
+  activePtys.delete(id);
   await window.terminalAPI.closeTerminal(id);
   tab.terminal.dispose();
   tab.onOutputDispose?.();
@@ -190,9 +281,10 @@ async function closeTabById(id: string): Promise<void> {
   tabHistory.delete(id);
 
   if (id === splitTabId) {
-    // Remove splitter
-    const splitter = paneContainer.querySelector('.pane-splitter');
+    const splitter = paneContainer.querySelector('.pane-splitter, .pane-splitter-vertical') as (HTMLElement & { _cleanup?: () => void }) | null;
+    splitter?._cleanup?.();
     splitter?.remove();
+    paneContainer.classList.remove(SPLIT_VERTICAL_CLASS);
     splitTabId = null;
   }
 
@@ -205,6 +297,8 @@ async function closeTabById(id: string): Promise<void> {
 
 // ── Splitter drag ──────────────────────────────────────────────────────────────
 function setupSplitterDrag(splitter: HTMLElement, rightPane: HTMLElement): void {
+  const ac = new AbortController();
+  const { signal } = ac;
   let dragging = false;
   let startX = 0;
   let startLeft = 0;
@@ -232,7 +326,7 @@ function setupSplitterDrag(splitter: HTMLElement, rightPane: HTMLElement): void 
     rightPane.style.flex = 'none';
     rightPane.style.width = `${newRight}px`;
     fitAllTerminals();
-  });
+  }, { signal });
 
   document.addEventListener('mouseup', () => {
     if (!dragging) return;
@@ -241,7 +335,55 @@ function setupSplitterDrag(splitter: HTMLElement, rightPane: HTMLElement): void 
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
     fitAllTerminals();
+  }, { signal });
+
+  // Store cleanup fn on splitter element for later removal
+  (splitter as HTMLElement & { _cleanup?: () => void })._cleanup = () => ac.abort();
+}
+
+function setupSplitterDragVertical(splitter: HTMLElement, bottomPane: HTMLElement): void {
+  const ac = new AbortController();
+  const { signal } = ac;
+  let dragging = false;
+  let startY = 0;
+  let startTop = 0;
+  let startBottom = 0;
+
+  splitter.addEventListener('mousedown', (e) => {
+    dragging = true;
+    startY = e.clientY;
+    const topPane = paneContainer.firstElementChild as HTMLElement;
+    startTop = topPane.getBoundingClientRect().height;
+    startBottom = bottomPane.getBoundingClientRect().height;
+    splitter.classList.add('dragging');
+    document.body.style.cursor = 'row-resize';
+    document.body.style.userSelect = 'none';
   });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    const dy = e.clientY - startY;
+    const topPane = paneContainer.firstElementChild as HTMLElement;
+    const newTop = Math.max(200, startTop + dy);
+    const newBottom = Math.max(200, startBottom - dy);
+    topPane.style.flex = 'none';
+    topPane.style.height = `${newTop}px`;
+    bottomPane.style.flex = 'none';
+    bottomPane.style.height = `${newBottom}px`;
+    fitAllTerminals();
+  }, { signal });
+
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    splitter.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    fitAllTerminals();
+  }, { signal });
+
+  // Store cleanup fn on splitter element for later removal
+  (splitter as HTMLElement & { _cleanup?: () => void })._cleanup = () => ac.abort();
 }
 
 // ── Fit and resize ─────────────────────────────────────────────────────────────
@@ -278,8 +420,6 @@ const resizeObserver = new ResizeObserver(() => fitAllTerminals());
 resizeObserver.observe(paneContainer);
 
 // ── AI Input ───────────────────────────────────────────────────────────────────
-let pendingCommand: { command: string; risk: string } | null = null;
-
 async function submitAIRequest(): Promise<void> {
   const input = aiInput.value.trim();
   if (!input || !activeTabId) return;
@@ -324,48 +464,53 @@ async function submitAIRequest(): Promise<void> {
   }
 
   // Show preview card
-  showPreview(res as { command: string; explanation: string; is_destructive: boolean; requires_confirmation: boolean; risk_level: string });
+  showPreview(res as {
+    command: string; explanation: string;
+    is_destructive: boolean; requires_confirmation: boolean; risk_level: string;
+  });
 }
 
-function showPreview(response: {
-  command: string; explanation: string;
-  is_destructive: boolean; requires_confirmation: boolean; risk_level: string;
-}): void {
-  previewCmd.textContent = response.command;
-  previewExp.textContent = response.explanation;
-
-  riskBadge.textContent = response.risk_level;
-  riskBadge.className = `risk-badge ${response.risk_level}`;
-
-  confirmDialog.classList.toggle('hidden', !response.requires_confirmation);
-  pendingCommand = { command: response.command, risk: response.risk_level };
-
-  previewCard.classList.remove('hidden');
+function showPreview(response: PreviewResponse): void {
+  _showPreview(previewRefs, response);
   previewRunBtn.focus();
 }
 
 previewRunBtn.addEventListener('click', () => {
-  if (!pendingCommand || !activeTabId) return;
-  window.terminalAPI.executeCommand(activeTabId, pendingCommand.command);
-
+  const cmd = isEditMode() ? getEditedCommand(previewRefs) : getPendingCommand()?.command;
+  if (!cmd || !activeTabId) return;
   // Track command in per-tab history (capped at 20)
-  if (activeTabId && pendingCommand) {
-    const hist = tabHistory.get(activeTabId) ?? [];
-    hist.push(pendingCommand.command);
-    if (hist.length > 20) hist.shift();
-    tabHistory.set(activeTabId, hist);
-  }
-
-  previewCard.classList.add('hidden');
-  pendingCommand = null;
+  const hist = tabHistory.get(activeTabId) ?? [];
+  hist.push(cmd);
+  if (hist.length > 20) hist.shift();
+  tabHistory.set(activeTabId, hist);
+  hidePreview(previewRefs);
+  window.terminalAPI.executeCommand(activeTabId, cmd);
   const tab = tabs.get(activeTabId);
   tab?.terminal.focus();
 });
 
+previewEditBtn.addEventListener('click', () => {
+  enterEditMode(previewRefs);
+});
+
+previewEditInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    e.stopPropagation(); // prevent the previewCard keydown from also firing
+    exitEditMode(previewRefs);
+    previewRunBtn.focus();
+  }
+});
+
 previewCancelBtn.addEventListener('click', () => {
-  previewCard.classList.add('hidden');
-  pendingCommand = null;
+  hidePreview(previewRefs);
   aiInput.focus();
+});
+
+previewCard.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    hidePreview(previewRefs);
+    aiInput.focus();
+  }
 });
 
 aiSubmitBtn.addEventListener('click', submitAIRequest);
@@ -397,12 +542,20 @@ function buildSchemeGrid(container: HTMLElement, schemes: ColorScheme[], selecte
       applyScheme(scheme);
       applyThemeToTerminals();
     });
+    btn.addEventListener('mouseenter', () => {
+      applyScheme(scheme);
+      applyThemeToTerminals(scheme);
+    });
+    btn.addEventListener('mouseleave', () => {
+      applyScheme(currentScheme);
+      applyThemeToTerminals();
+    });
     container.appendChild(btn);
   });
 }
 
-function applyThemeToTerminals(): void {
-  const xtermTheme = toXtermTheme(currentScheme);
+function applyThemeToTerminals(override?: ColorScheme): void {
+  const xtermTheme = toXtermTheme(override ?? currentScheme);
   tabs.forEach((tab) => { tab.terminal.options.theme = xtermTheme; });
 }
 
@@ -425,6 +578,24 @@ function setupModeButtons(container: HTMLElement, mode: 'dark' | 'light' | 'auto
 }
 
 // ── Settings panel ──────────────────────────────────────────────────────────────
+
+/** Show/hide provider-specific fields based on selected provider. */
+function applyProviderVisibility(provider: string): void {
+  const isOllama = provider === 'ollama';
+  // Ollama host row
+  ollamaHostInput.setAttribute('aria-hidden', String(!isOllama));
+  ollamaHostInput.disabled = !isOllama;
+  (ollamaHostInput as HTMLElement).style.display = isOllama ? '' : 'none';
+  // API key row
+  apiKeyInput.setAttribute('aria-hidden', String(isOllama));
+  apiKeyInput.disabled = isOllama;
+  (apiKeyInput as HTMLElement).style.display = isOllama ? 'none' : '';
+}
+
+providerSelect.addEventListener('change', () => {
+  applyProviderVisibility(providerSelect.value);
+});
+
 settingsBtn.addEventListener('click', () => {
   settingsPanel.classList.toggle('hidden');
 });
@@ -436,6 +607,14 @@ settingsCloseBtn.addEventListener('click', () => {
 testConnectionBtn.addEventListener('click', async () => {
   connectionStatus.textContent = 'Testing…';
   connectionStatus.className = 'connection-status';
+  // Save current form values before testing so testConnection uses up-to-date config
+  const partial: Record<string, unknown> = {
+    provider: providerSelect.value,
+    model: modelInput.value || undefined,
+    ollama_host: ollamaHostInput.value || null,
+  };
+  if (apiKeyInput.value) partial.api_key = apiKeyInput.value;
+  await window.terminalAPI.setConfig(partial);
   const result = await window.terminalAPI.testConnection() as Record<string, unknown>;
   if (result.ok) {
     connectionStatus.textContent = `✓ Connected — ${result.provider} / ${result.model} (${result.latency_ms}ms)`;
@@ -485,6 +664,7 @@ async function init(): Promise<void> {
   modelInput.value = (config.model as string) ?? '';
   ollamaHostInput.value = (config.ollama_host as string) ?? '';
   shellInput.value = (config.shell as string) ?? '';
+  applyProviderVisibility(providerSelect.value);
   fontFamilyInput.value = (config.font_family as string) ?? 'JetBrains Mono';
   fontSizeInput.value = String(currentFontSize);
 
@@ -511,16 +691,27 @@ themeApplyBtn.addEventListener('click', async () => {
 
 newTabBtn.addEventListener('click', () => createTab());
 
-// Keyboard shortcut: Cmd/Ctrl+T = new tab, Cmd/Ctrl+Shift+D = split
+// Keyboard shortcuts: Cmd/Ctrl+T = new tab, Cmd/Ctrl+Shift+D = horizontal split,
+// Cmd/Ctrl+Shift+E = vertical split, Cmd/Ctrl+1-9 = activate tab by index
 document.addEventListener('keydown', (e) => {
-  if ((e.metaKey || e.ctrlKey) && e.key === 't') { e.preventDefault(); createTab(); }
-  if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'd') { e.preventDefault(); createTab(true); }
+  const isMeta = e.metaKey || e.ctrlKey;
+  if (!isMeta) return;
+  if (e.key === 't') { e.preventDefault(); createTab(); }
+  if (e.shiftKey && e.key === 'd') { e.preventDefault(); createTab('horizontal'); }
+  if (e.shiftKey && e.key === 'e') { e.preventDefault(); createTab('vertical'); }
+  if (!e.shiftKey && e.key >= '1' && e.key <= '9') {
+    e.preventDefault();
+    const index = parseInt(e.key, 10) - 1;
+    const tabId = getTabAtIndex(index, tabs);
+    if (tabId) activateTab(tabId);
+  }
 });
 
 // PTY exit notification
 window.terminalAPI.onExit((tabId, exitCode) => {
   const tab = tabs.get(tabId);
   if (!tab) return;
+  activePtys.delete(tabId);
   tab.terminal.writeln(`\r\n\x1b[90m[Process exited with code ${exitCode}]\x1b[0m`);
 });
 
