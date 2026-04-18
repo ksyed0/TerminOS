@@ -26,9 +26,11 @@ function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
+    x: 100,
+    y: 100,
     minWidth: 800,
     minHeight: 600,
-    backgroundColor: '#1d1f21',  // Tomorrow Night default — overridden by renderer
+    backgroundColor: '#1d1f21',
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -36,7 +38,7 @@ function createWindow(): void {
       sandbox: true,
     },
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
-    show: false,  // show after ready-to-show to avoid flash
+    show: false,
   });
 
   mainWindow.once('ready-to-show', () => {
