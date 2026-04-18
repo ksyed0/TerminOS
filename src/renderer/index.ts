@@ -541,9 +541,21 @@ function showPreview(response: PreviewResponse): void {
   previewRunBtn.focus();
 }
 
-previewRunBtn.addEventListener('click', () => {
-  const cmd = isEditMode() ? getEditedCommand(previewRefs) : getPendingCommand()?.command;
+previewRunBtn.addEventListener('click', async () => {
+  let cmd = isEditMode() ? getEditedCommand(previewRefs) : getPendingCommand()?.command;
   if (!cmd || !activeTabId) return;
+
+  // Handle "open" commands - open file in editor
+  if (cmd.trim().toLowerCase() === 'open' || cmd.trim().toLowerCase().startsWith('open ')) {
+    hidePreview(previewRefs);
+    const result = await window.terminalAPI.openFile() as { canceled: boolean; filePath?: string; content?: string };
+    if (!result.canceled && result.filePath && result.content) {
+      const filename = result.filePath.split('/').pop() ?? 'Untitled';
+      createEditorTab(filename, result.content, result.filePath);
+    }
+    return;
+  }
+
   // Track command in per-tab history (capped at 20)
   const hist = tabHistory.get(activeTabId) ?? [];
   hist.push(cmd);
