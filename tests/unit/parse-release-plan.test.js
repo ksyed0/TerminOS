@@ -12,7 +12,7 @@ describe('parseReleasePlan', () => {
   beforeAll(() => { result = parseReleasePlan(fixture); });
 
   describe('epics', () => {
-    it('extracts two epics', () => expect(result.epics).toHaveLength(2));
+    it('extracts six epics', () => expect(result.epics).toHaveLength(6));
     it('parses epic ID', () => expect(result.epics[0].id).toBe('EPIC-0001'));
     it('parses epic title', () => expect(result.epics[0].title).toBe('Code Editing'));
     it('parses epic status', () => expect(result.epics[0].status).toBe('In Progress'));
@@ -22,7 +22,7 @@ describe('parseReleasePlan', () => {
   });
 
   describe('stories', () => {
-    it('extracts two stories', () => expect(result.stories).toHaveLength(2));
+    it('extracts fourteen stories', () => expect(result.stories).toHaveLength(14));
     it('parses story ID', () => expect(result.stories[0].id).toBe('US-0001'));
     it('parses story epicId', () => expect(result.stories[0].epicId).toBe('EPIC-0001'));
     it('parses story title', () => expect(result.stories[0].title).toMatch(/open a file/));
@@ -30,7 +30,7 @@ describe('parseReleasePlan', () => {
     it('parses story estimate', () => expect(result.stories[0].estimate).toBe('M'));
     it('parses story status', () => expect(result.stories[0].status).toBe('In Progress'));
     it('parses story branch', () => expect(result.stories[0].branch).toBe('feature/US-0001-open-file'));
-    it('parses ACs', () => expect(result.stories[0].acs).toHaveLength(2));
+    it('parses ACs', () => expect(result.stories[0].acs).toHaveLength(2)); // AC-0001, AC-0002
     it('parses AC id', () => expect(result.stories[0].acs[0].id).toBe('AC-0001'));
     it('parses AC text', () => expect(result.stories[0].acs[0].text).toBe('File picker opens'));
     it('parses AC done=false', () => expect(result.stories[0].acs[0].done).toBe(false));
