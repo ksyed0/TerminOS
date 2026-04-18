@@ -33,6 +33,11 @@ export interface TerminalAPI {
 
   // Theme
   changeTheme(mode: 'dark' | 'light' | 'auto', scheme: string): Promise<void>;
+
+  // File
+  saveFile(path: string, content: string): Promise<void>;
+  saveFileAs(name: string, content: string): Promise<{ canceled: boolean; filePath?: string }>;
+  openFile(): Promise<{ canceled: boolean; filePath?: string; content?: string }>;
 }
 
 const terminalAPI: TerminalAPI = {
@@ -88,6 +93,16 @@ const terminalAPI: TerminalAPI = {
   // ── Theme ────────────────────────────────────────────────────────────────────
   changeTheme: (mode, scheme) =>
     ipcRenderer.invoke('theme:change', { mode, scheme }),
+
+  // ── File ────────────────────────────────────────────────────────────────────
+  saveFile: (path, content) =>
+    ipcRenderer.invoke('file:save', { path, content }),
+
+  saveFileAs: (name, content) =>
+    ipcRenderer.invoke('file:save-as', { name, content }),
+
+  openFile: () =>
+    ipcRenderer.invoke('dialog:openFile'),
 };
 
 contextBridge.exposeInMainWorld('terminalAPI', terminalAPI);

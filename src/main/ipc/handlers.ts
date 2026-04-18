@@ -4,7 +4,9 @@
  * See architecture/ipc-channels.md for full payload schemas.
  */
 
-import { ipcMain, BrowserWindow } from 'electron';
+import { ipcMain, BrowserWindow, dialog } from 'electron';
+import * as fs from 'fs';
+import * as path from 'path';
 import { PtyManager } from '../pty/manager';
 import { ConfigStore } from '../config/store';
 import { createProvider } from '../providers/factory';
@@ -158,6 +160,55 @@ export function registerHandlers(win: BrowserWindow, store: ConfigStore): void {
   // ── theme:change ─────────────────────────────────────────────────────────────
   ipcMain.handle('theme:change', (_event, payload: { mode: 'dark' | 'light' | 'auto'; scheme: string }) => {
     configStore.set({ theme_mode: payload.mode, color_scheme: payload.scheme });
+  });
+
+  // ── file:save ───────────────────────────────────────────────────────────
+  ipcMain.handle('file:save', async (_event, payload: { path: string; content: string }) => {
+    try {
+      await fs.promises.writeFile(payload.path, payload.content, 'utf-8');
+      return { success: true };
+    } catch (err) {
+      return { error: 'E_FILE_SAVE', message: (err as Error).message };
+    }
+  });
+
+  // ── file:save-as ─────────────────────────────────────────────────
+  ipcMain.handle('file:save-as', async (_event, payload: { name: string; content: string }) => {
+    try {
+      const result = await dialog.showSaveDialog(mainWindow, {
+        defaultPath: payload.name,
+      });
+
+      if (result.canceled || !result.filePath) {
+        return { canceled: true };
+      }
+
+      await fs.promises.writeFile(result.filePath, payload.content, 'utf-8');
+      return { canceled: false, filePath: result.filePath };
+    } catch (err) {
+      return { canceled: false, error: 'E_FILE_SAVE', message: (err as Error).message };
+    }
+  });
+
+  // ── dialog:openFile ─────────────────────────────────────────────────────────
+  ipcMain.handle('dialog:openFile', async () => {
+    try {
+      const result = await dialog.showOpenDialog(mainWindow, {
+        properties: ['openFile'],
+        filters: [
+          { name: 'Code', extensions: ['ts', 'tsx', 'js', 'jsx', 'py', 'json', 'html', 'css', 'md', 'java', 'cs', 'c', 'cpp', 'h', 'dart'] },
+          { name: 'All Files', extensions: ['*'] },
+        ],
+      });
+      if (result.canceled || result.filePaths.length === 0) {
+        return { canceled: true };
+      }
+      const filePath = result.filePaths[0];
+      const content = fs.readFileSync(filePath, 'utf-8');
+      return { canceled: false, filePath, content };
+    } catch (err) {
+      return { canceled: false, error: 'E_FILE_OPEN', message: (err as Error).message };
+    }
   });
 }
 
