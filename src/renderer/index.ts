@@ -8,6 +8,7 @@ import { Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import 'xterm/css/xterm.css';
 
+import { EditorTab } from './editor-tab';
 import {
   DARK_SCHEMES, LIGHT_SCHEMES, ALL_SCHEMES,
   applyScheme, toXtermTheme, schemesForMode, findScheme,
@@ -39,6 +40,7 @@ interface Tab {
 
 // ── State ─────────────────────────────────────────────────────────────────────
 const tabs: Map<string, Tab> = new Map();
+const editorTabs: Map<string, EditorTab> = new Map();
 let activeTabId: string | null = null;
 let splitTabId: string | null = null;  // second pane in splitter mode
 let currentFontSize = 14;
@@ -52,6 +54,7 @@ const tabHistory: Map<string, string[]> = new Map();
 // ── DOM refs ──────────────────────────────────────────────────────────────────
 const tabBar         = document.getElementById('tab-bar')!;
 const newTabBtn      = document.getElementById('new-tab-btn')!;
+const newTabDropdown  = document.querySelector('.new-tab-dropdown') as HTMLElement;
 const paneContainer  = document.getElementById('pane-container')!;
 const aiInput        = document.getElementById('ai-input') as HTMLInputElement;
 const aiSubmitBtn    = document.getElementById('ai-submit-btn') as HTMLButtonElement;
@@ -215,32 +218,93 @@ async function createTab(splitDir: 'horizontal' | 'vertical' | false = false): P
   return id;
 }
 
-function activateTab(id: string): void {
-  const tab = tabs.get(id);
-  if (!tab) return;
+function createEditorTab(filename: string, content: string, filePath?: string): string {
+  const id = newTabId();
+  const paneEl = document.createElement('div');
+  paneEl.className = 'editor-pane';
+  paneEl.id = `pane-${id}`;
+  paneContainer.appendChild(paneEl);
 
-  const prevActiveId = activeTabId;
-  tabs.forEach((t, tid) => {
-    t.paneEl.style.display = (tid === id || (splitTabId && tid === splitTabId && id === prevActiveId)) ? '' : 'none';
-    t.tabEl.setAttribute('aria-selected', tid === id ? 'true' : 'false');
-    t.tabEl.classList.toggle('active', tid === id);
-    // In split mode keep both visible
-    if (splitTabId) {
-      const otherSplitId = id === prevActiveId ? splitTabId : prevActiveId;
-      if (otherSplitId) {
-        const other = tabs.get(otherSplitId!);
-        if (other) other.paneEl.style.display = '';
-      }
-    }
+  const editor = new EditorTab(paneEl, content, filename, filePath);
+  editorTabs.set(id, editor);
+
+  const tabEl = editor.tabElement;
+  tabEl.setAttribute('role', 'tab');
+  tabEl.dataset.tabId = id;
+  tabBar.insertBefore(tabEl, newTabBtn);
+
+  tabEl.addEventListener('click', () => {
+    activateTab(id);
   });
 
-  activeTabId = id;
-  (window as any).__activeTerminal = tabs.get(id)?.terminal ?? null;
-  tab.terminal.focus();
+  activateTab(id);
+  return id;
+}
+
+function activateTab(id: string): void {
+  const tab = tabs.get(id);
+  const editorTab = editorTabs.get(id);
+
+  if (!tab && !editorTab) return;
+
+  if (editorTab) {
+    tabs.forEach((t) => {
+      t.paneEl.style.display = 'none';
+      t.tabEl.classList.remove('active');
+    });
+    editorTab.element.style.display = '';
+    editorTab.tabElement.classList.add('active');
+    activeTabId = id;
+    (window as any).__activeTerminal = null;
+    return;
+  }
+
+  if (tab) {
+    const prevActiveId = activeTabId;
+    tabs.forEach((t, tid) => {
+      t.paneEl.style.display = (tid === id || (splitTabId && tid === splitTabId && id === prevActiveId)) ? '' : 'none';
+      t.tabEl.setAttribute('aria-selected', tid === id ? 'true' : 'false');
+      t.tabEl.classList.toggle('active', tid === id);
+      if (splitTabId) {
+        const otherSplitId = id === prevActiveId ? splitTabId : prevActiveId;
+        if (otherSplitId) {
+          const other = tabs.get(otherSplitId!);
+          if (other) other.paneEl.style.display = '';
+        }
+      }
+    });
+
+    editorTabs.forEach((et) => {
+      et.element.style.display = 'none';
+      et.tabElement.classList.remove('active');
+    });
+
+    activeTabId = id;
+    (window as any).__activeTerminal = tab.terminal ?? null;
+    tab.terminal.focus();
+  }
 }
 
 async function closeTabById(id: string): Promise<void> {
   const tab = tabs.get(id);
+  const editorTab = editorTabs.get(id);
+
+  if (editorTab) {
+    editorTab.dispose();
+    editorTab.element.remove();
+    editorTab.tabElement.remove();
+    editorTabs.delete(id);
+
+    if (id === activeTabId) {
+      const remainingTabs = [...tabs.keys()];
+      const remainingEditors = [...editorTabs.keys()];
+      if (remainingTabs.length > 0) activateTab(remainingTabs[remainingTabs.length - 1]);
+      else if (remainingEditors.length > 0) activateTab(remainingEditors[remainingEditors.length - 1]);
+      else activeTabId = null;
+    }
+    return;
+  }
+
   if (!tab) return;
 
   if (shouldConfirmClose(id, activePtys)) {
@@ -289,8 +353,10 @@ async function closeTabById(id: string): Promise<void> {
   }
 
   if (id === activeTabId) {
-    const remaining = [...tabs.keys()];
-    if (remaining.length > 0) activateTab(remaining[remaining.length - 1]);
+    const remainingTabs = [...tabs.keys()];
+    const remainingEditors = [...editorTabs.keys()];
+    if (remainingTabs.length > 0) activateTab(remainingTabs[remainingTabs.length - 1]);
+    else if (remainingEditors.length > 0) activateTab(remainingEditors[remainingEditors.length - 1]);
     else activeTabId = null;
   }
 }
@@ -689,11 +755,36 @@ themeApplyBtn.addEventListener('click', async () => {
   await createTab();
 });
 
-newTabBtn.addEventListener('click', () => createTab());
+const newTabMenu = document.getElementById('new-tab-menu');
+const newTabTerminal = document.getElementById('new-tab-terminal');
+const newTabEditor = document.getElementById('new-tab-editor');
+
+newTabBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  newTabMenu?.classList.toggle('hidden');
+});
+
+document.addEventListener('click', () => {
+  newTabMenu?.classList.add('hidden');
+});
+
+newTabTerminal?.addEventListener('click', async () => {
+  newTabMenu?.classList.add('hidden');
+  await createTab();
+});
+
+newTabEditor?.addEventListener('click', async () => {
+  newTabMenu?.classList.add('hidden');
+  const result = await window.terminalAPI.openFile() as { canceled: boolean; filePath?: string; content?: string };
+  if (result.canceled || !result.filePath || !result.content) return;
+  const filename = result.filePath.split('/').pop() ?? 'Untitled';
+  createEditorTab(filename, result.content, result.filePath);
+});
 
 // Keyboard shortcuts: Cmd/Ctrl+T = new tab, Cmd/Ctrl+Shift+D = horizontal split,
-// Cmd/Ctrl+Shift+E = vertical split, Cmd/Ctrl+1-9 = activate tab by index
-document.addEventListener('keydown', (e) => {
+// Cmd/Ctrl+Shift+E = vertical split, Cmd/Ctrl+1-9 = activate tab by index,
+// Cmd/Ctrl+O = open file
+document.addEventListener('keydown', async (e) => {
   const isMeta = e.metaKey || e.ctrlKey;
   if (!isMeta) return;
   if (e.key === 't') { e.preventDefault(); createTab(); }
@@ -704,6 +795,13 @@ document.addEventListener('keydown', (e) => {
     const index = parseInt(e.key, 10) - 1;
     const tabId = getTabAtIndex(index, tabs);
     if (tabId) activateTab(tabId);
+  }
+  if (e.key === 'o') {
+    e.preventDefault();
+    const result = await window.terminalAPI.openFile() as { canceled: boolean; filePath?: string; content?: string };
+    if (result.canceled || !result.filePath || !result.content) return;
+    const filename = result.filePath.split('/').pop() ?? 'Untitled';
+    createEditorTab(filename, result.content, result.filePath);
   }
 });
 

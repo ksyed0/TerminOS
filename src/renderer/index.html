@@ -46,7 +46,13 @@
   <div id="app" class="app-layout">
     <!-- Tab Bar -->
     <div id="tab-bar" class="tab-bar" role="tablist" aria-label="Terminal tabs">
-      <button id="new-tab-btn" class="new-tab-btn" aria-label="New tab" title="New tab">+</button>
+      <div class="new-tab-dropdown">
+        <button id="new-tab-btn" class="new-tab-btn" aria-label="New tab" title="New tab">+</button>
+        <div id="new-tab-menu" class="new-tab-menu hidden">
+          <button id="new-tab-terminal" class="menu-item">Terminal</button>
+          <button id="new-tab-editor" class="menu-item">Code Editor</button>
+        </div>
+      </div>
     </div>
 
     <!-- Terminal Panes (splitter or full-window, managed by JS) -->
