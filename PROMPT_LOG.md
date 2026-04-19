@@ -66,3 +66,21 @@
 | 2026-03-14T18:35:00Z | How can I retrieve the workflow |
 | 2026-03-14T18:40:00Z | gh workflow run plan-visualizer.yml |
 | 2026-03-14T18:45:00Z | Update all session close actions, commit all changes and create a pr description and title, confirm branches to use for merge |
+
+---
+
+## Session — 2026-04-18
+
+| Timestamp | Prompt |
+|-----------|--------|
+| 2026-04-18T00:00:00Z | research key terminal applications availabel on the ios, macos, and google play app stores. review the key features offered, and compare with the features recorded for this app in @tests/fixtures/RELEASE_PLAN.md |
+| 2026-04-18T00:00:00Z | Baed on this assessment, lets capture these to a future set of epics and stories in @tests/fixtures/RELEASE_PLAN.md |
+| 2026-04-18T00:00:00Z | assess the @tests/fixtures/RELEASE_PLAN.md and confirm what we should implement next |
+| 2026-04-18T00:00:00Z | use brainstorming skill to complete EPIC-001 |
+| 2026-04-18T00:00:00Z | can you run the build and open this on the ipad pro 13 simulator |
+| 2026-04-18T00:00:00Z | I'm trying to connecto to the AI endpoint. I chose Ollama as the type and entered qwen3.6-35b-a3b-oq2 in the model field and http://127.0.0.1:1234/v1/completions in the host field then clicked test connection |
+| 2026-04-18T00:00:00Z | I'm trying to connect to a local model running in LMStudio, running on http://localhost:1234 |
+| 2026-04-18T00:00:00Z | when selecting OpenAI, there are only the API key and model name fields, no host field |
+| 2026-04-18T00:00:00Z | where is the release plan roadmap |
+| 2026-04-18T00:00:00Z | did you review @AGENTS.md and understand it |
+| 2026-04-18T00:00:00Z | fill in the missing artifacts |

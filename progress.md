@@ -173,3 +173,30 @@
 
 ### Next Steps
 - Merge `claude/add-e2e-tests-builder-bVS43` → `develop` via PR (external, GitHub UI)
+
+---
+
+## 2026-04-18 — Session: Code Editor (EPIC-0001)
+
+### Completed
+- **EPIC-0001: Code Editor** implemented:
+  - Added CodeMirror 6 dependencies (package.json)
+  - Created `src/renderer/editor-tab.ts` EditorTab class
+  - Added file picker IPC (`openFile`, `saveFile`, `saveFileAs`)
+  - Added new tab dropdown (Terminal / Code Editor)
+  - Added Cmd+O keyboard shortcut
+  - Supported 12+ languages: TS, JS, Python, JSON, HTML, CSS, Java, C#, C++
+  - Added AI "open" command handling
+  - Fixed OpenAI provider for LM Studio (custom base URL)
+  - Test expectations updated (6 epics, 14 stories)
+- Build passes, 359/359 tests passing
+
+### Blockers
+- None.
+
+### Next Steps
+- Decide next epic: EPIC-0002 (File Management) or EPIC-0003 (SSH)
+- Commits pending for this session's work
+
+### Test Coverage
+- Code Editor has no unit tests ( violation of §8 )
