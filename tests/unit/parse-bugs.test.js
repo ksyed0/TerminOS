@@ -4,7 +4,7 @@ const fs = require('fs');
 const { parseBugs } = require('../../tools/lib/parse-bugs');
 
 const fixture = fs.readFileSync(
-  path.join(__dirname, '../fixtures/BUGS.md'), 'utf8'
+  path.join(__dirname, '../../docs/BUGS.md'), 'utf8'
 );
 
 describe('parseBugs', () => {

@@ -4,7 +4,7 @@ const fs = require('fs');
 const { parseTestCases } = require('../../tools/lib/parse-test-cases');
 
 const fixture = fs.readFileSync(
-  path.join(__dirname, '../fixtures/TEST_CASES.md'), 'utf8'
+  path.join(__dirname, '../../docs/TEST_CASES.md'), 'utf8'
 );
 
 describe('parseTestCases', () => {

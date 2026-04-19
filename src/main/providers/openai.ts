@@ -27,7 +27,13 @@ export class OpenAIProvider implements AIProvider {
 
   constructor(config: ProviderConfig) {
     this.config = config;
-    this.client = new OpenAI({ apiKey: config.api_key });
+    // Support custom base URL (for LM Studio, local models, etc.)
+    // Use ollama_host field as custom base URL when using OpenAI provider
+    const baseURL = config.ollama_host || undefined;
+    this.client = new OpenAI({ 
+      apiKey: config.api_key || 'local',
+      baseURL,
+    });
   }
 
   async interpret(request: AIRequest): Promise<AIResponse> {

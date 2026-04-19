@@ -4,7 +4,7 @@ const fs = require('fs');
 const { parseReleasePlan } = require('../../tools/lib/parse-release-plan');
 
 const fixture = fs.readFileSync(
-  path.join(__dirname, '../fixtures/RELEASE_PLAN.md'), 'utf8'
+  path.join(__dirname, '../../docs/RELEASE_PLAN.md'), 'utf8'
 );
 
 describe('parseReleasePlan', () => {

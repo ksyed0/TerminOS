@@ -660,10 +660,11 @@ function setupModeButtons(container: HTMLElement, mode: 'dark' | 'light' | 'auto
 /** Show/hide provider-specific fields based on selected provider. */
 function applyProviderVisibility(provider: string): void {
   const isOllama = provider === 'ollama';
-  // Ollama host row
-  ollamaHostInput.setAttribute('aria-hidden', String(!isOllama));
-  ollamaHostInput.disabled = !isOllama;
-  (ollamaHostInput as HTMLElement).style.display = isOllama ? '' : 'none';
+  // Ollama host row - show for Ollama and OpenAI (for LM Studio)
+  const isOpenAI = provider === 'openai';
+  ollamaHostInput.setAttribute('aria-hidden', String(!isOllama && !isOpenAI));
+  ollamaHostInput.disabled = !isOllama && !isOpenAI;
+  (ollamaHostInput as HTMLElement).style.display = (isOllama || isOpenAI) ? '' : 'none';
   // API key row
   apiKeyInput.setAttribute('aria-hidden', String(isOllama));
   apiKeyInput.disabled = isOllama;

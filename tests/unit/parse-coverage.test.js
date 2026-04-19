@@ -2,7 +2,7 @@
 'use strict';
 const { parseCoverage } = require('../../tools/lib/parse-coverage');
 
-const fixture = require('../fixtures/coverage-summary.json');
+const fixture = require('../../docs/coverage/coverage-summary.json');
 
 describe('parseCoverage', () => {
   let result;

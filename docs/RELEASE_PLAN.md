@@ -1,4 +1,4 @@
-# RELEASE_PLAN.md — Fixture
+# RELEASE_PLAN.md
 
 ## Epics
 
