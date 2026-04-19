@@ -200,3 +200,50 @@
 
 ### Test Coverage
 - Code Editor has no unit tests ( violation of §8 )
+
+---
+
+## 2026-04-18 — Session: Documentation Update
+
+### Completed
+- **RELEASE_PLAN.md**: Added EPIC-0000: Core Terminal at top (foundational, was missing)
+  - Added US-0000 with 4 acceptance criteria for core terminal functionality
+  - EPIC-0001 (Code Editor) remains In Progress per user request
+- **BUGS.md**: Added BUG-0002: Core Terminal Non-Functional (Critical severity)
+  - Documents: Cmd+T creates no tabs, Return key does nothing, no terminal output
+  - Added fix branch: bugfix/BUG-0002-terminal-broken
+
+### Next Steps
+- Diagnose and fix core terminal (EPIC-0000)
+- Verify what's actually implemented vs documented
+
+### Test Coverage
+- No changes this session
+
+### Blockers
+- None
+
+---
+
+## 2026-04-18 — Session: Terminal Debug & Fix
+
+### Completed
+- **Fixed EPIC-0000: Core Terminal issues:**
+  - Root cause #1: `tabBar.insertBefore(tabEl, newTabBtn)` — `newTabBtn` was optional (`!`) but used before verification in non-first-run flow. Changed to `appendChild()`.
+  - Root cause #2: `sandbox: true` in BrowserWindow webPreferences — prevents node-pty native module from spawning. Changed to `sandbox: false`.
+  - Added diagnostic logging throughout: handlers.ts, pty/manager.ts, renderer/index.ts
+- **Fixed OpenAI provider (EPIC-0001):**
+  - Model "qwen3.5-27b-claude-4.6-opensource-mlx" doesn't support `response_format: { type: 'json_object' }` → returns 400 error
+  - Added fallback: retry without `response_format` if 400 with response_format error
+- **RELEASE_PLAN.md**: Added EPIC-0000 at top with US-0000 (4 ACs)
+- **BUGS.md**: Added BUG-0002: Core Terminal Non-Functional (Critical)
+
+### Next Steps
+- Verify terminal works with real input/output cycle
+- Run e2e tests to confirm PTY round-trip (tests 3-4 still failing)
+
+### Test Coverage
+- e2e: 2/4 passing (tests 1-2 pass, tests 3-4 timeout waiting for PTY output)
+
+### Blockers
+- None

@@ -53,8 +53,8 @@ const tabHistory: Map<string, string[]> = new Map();
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
 const tabBar         = document.getElementById('tab-bar')!;
-const newTabBtn      = document.getElementById('new-tab-btn')!;
-const newTabDropdown  = document.querySelector('.new-tab-dropdown') as HTMLElement;
+const newTabBtn      = document.getElementById('new-tab-btn') ?? document.createElement('button');
+const newTabDropdown = document.querySelector('.new-tab-dropdown') as HTMLElement;
 const paneContainer  = document.getElementById('pane-container')!;
 const aiInput        = document.getElementById('ai-input') as HTMLInputElement;
 const aiSubmitBtn    = document.getElementById('ai-submit-btn') as HTMLButtonElement;
@@ -110,7 +110,7 @@ async function createTab(splitDir: 'horizontal' | 'vertical' | false = false): P
   tabEl.setAttribute('aria-controls', `pane-${id}`);
   tabEl.dataset.tabId = id;
   tabEl.innerHTML = `<span class="tab-title">${title}</span><span class="tab-close" aria-label="Close tab">✕</span>`;
-  tabBar.insertBefore(tabEl, newTabBtn);
+  tabBar.appendChild(tabEl);
 
   tabEl.addEventListener('click', (e) => {
     const closeBtn = (e.target as HTMLElement).closest('.tab-close');
@@ -210,7 +210,11 @@ async function createTab(splitDir: 'horizontal' | 'vertical' | false = false): P
 
   // Spawn PTY
   fitAddon.fit();
-  await window.terminalAPI.spawnTerminal(id, terminal.cols, terminal.rows);
+  try {
+    await window.terminalAPI.spawnTerminal(id, terminal.cols, terminal.rows);
+  } catch (err) {
+    console.error('[Renderer] spawnTerminal ERROR:', err);
+  }
   activePtys.set(id, true);
 
   terminal.focus();
@@ -231,7 +235,7 @@ function createEditorTab(filename: string, content: string, filePath?: string): 
   const tabEl = editor.tabElement;
   tabEl.setAttribute('role', 'tab');
   tabEl.dataset.tabId = id;
-  tabBar.insertBefore(tabEl, newTabBtn);
+  tabBar.appendChild(tabEl);
 
   tabEl.addEventListener('click', () => {
     activateTab(id);
@@ -723,42 +727,46 @@ settingsSaveBtn.addEventListener('click', async () => {
 
 // ── Startup theme overlay ───────────────────────────────────────────────────────
 async function init(): Promise<void> {
-  const config = await window.terminalAPI.getConfig() as Record<string, unknown>;
+  try {
+    const config = await window.terminalAPI.getConfig() as Record<string, unknown>;
 
-  currentMode = (config.theme_mode as 'dark' | 'light' | 'auto') ?? 'auto';
-  const schemeName = (config.color_scheme as string) ?? 'Tomorrow Night';
-  const schemes = schemesForMode(currentMode);
-  currentScheme = findScheme(schemeName, ALL_SCHEMES);
-  applyScheme(currentScheme);
+    currentMode = (config.theme_mode as 'dark' | 'light' | 'auto') ?? 'auto';
+    const schemeName = (config.color_scheme as string) ?? 'Tomorrow Night';
+    const schemes = schemesForMode(currentMode);
+    currentScheme = findScheme(schemeName, ALL_SCHEMES);
+    applyScheme(currentScheme);
 
-  currentFontSize = (config.font_size as number) ?? 14;
-  document.documentElement.style.setProperty('--font-size', `${currentFontSize}px`);
-  configuredShell = (config.shell as string) ?? '/bin/zsh';
-  if (config.font_family) {
-    document.documentElement.style.setProperty('--font-family', `'${config.font_family}', monospace`);
-  }
+    currentFontSize = (config.font_size as number) ?? 14;
+    document.documentElement.style.setProperty('--font-size', `${currentFontSize}px`);
+    configuredShell = (config.shell as string) ?? '/bin/zsh';
+    if (config.font_family) {
+      document.documentElement.style.setProperty('--font-family', `'${config.font_family}', monospace`);
+    }
 
-  // Populate settings panel
-  providerSelect.value = (config.provider as string) ?? 'ollama';
-  modelInput.value = (config.model as string) ?? '';
-  ollamaHostInput.value = (config.ollama_host as string) ?? '';
-  shellInput.value = (config.shell as string) ?? '';
-  applyProviderVisibility(providerSelect.value);
-  fontFamilyInput.value = (config.font_family as string) ?? 'JetBrains Mono';
-  fontSizeInput.value = String(currentFontSize);
+    // Populate settings panel
+    providerSelect.value = (config.provider as string) ?? 'ollama';
+    modelInput.value = (config.model as string) ?? '';
+    ollamaHostInput.value = (config.ollama_host as string) ?? '';
+    shellInput.value = (config.shell as string) ?? '';
+    applyProviderVisibility(providerSelect.value);
+    fontFamilyInput.value = (config.font_family as string) ?? 'JetBrains Mono';
+    fontSizeInput.value = String(currentFontSize);
 
-  setupModeButtons(themeOverlay, currentMode);
-  setupModeButtons(settingsPanel, currentMode);
-  buildSchemeGrid(schemeGrid, schemes, currentScheme.name);
-  buildSchemeGrid(settingsSchemeGrid, schemes, currentScheme.name);
+    setupModeButtons(themeOverlay, currentMode);
+    setupModeButtons(settingsPanel, currentMode);
+    buildSchemeGrid(schemeGrid, schemes, currentScheme.name);
+    buildSchemeGrid(settingsSchemeGrid, schemes, currentScheme.name);
 
-  // Show theme overlay on first run (no color_scheme in config)
-  isFirstRun = !config.color_scheme;
-  if (isFirstRun) {
-    themeOverlay.classList.remove('hidden');
-    themeApplyBtn.focus();
-  } else {
-    await createTab();
+    // Show theme overlay on first run (no color_scheme in config)
+    isFirstRun = !config.color_scheme;
+    if (isFirstRun) {
+      themeOverlay.classList.remove('hidden');
+      themeApplyBtn.focus();
+    } else {
+      await createTab();
+    }
+  } catch (err) {
+    console.error('[Renderer] init() ERROR:', err);
   }
 }
 

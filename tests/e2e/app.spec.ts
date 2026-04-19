@@ -28,6 +28,14 @@ test.beforeAll(async () => {
   });
   page = await app.firstWindow();
   await page.waitForLoadState('domcontentloaded');
+  
+  // Capture and log console messages
+  page.on('console', msg => {
+    console.log(`[Browser Console] ${msg.type()}: ${msg.text()}`);
+  });
+  page.on('pageerror', err => {
+    console.error(`[Browser Error] ${err.message}`);
+  });
 });
 
 test.afterAll(async () => {
@@ -36,6 +44,9 @@ test.afterAll(async () => {
 
 // ── Test 1: window title ───────────────────────────────────────────────────
 test('window opens with correct title', async () => {
+  page.on('console', msg => {
+    console.log(`[MAIN Console] ${msg.text()}`);
+  });
   const title = await page.title();
   expect(title).toBe('TermnOS');
 });
@@ -58,10 +69,16 @@ test('PTY round-trip: echo hello_e2e produces output', async () => {
     (window as any).__e2eOutput = '';
     (window as any).terminalAPI.onOutput(
       (_tabId: string, data: string) => {
+        console.log('[IPC] onOutput received:', data);
         (window as any).__e2eOutput += data;
       }
     );
   });
+
+  // First, focus the xterm.js terminal element
+  const xtermScreen = page.locator('.xterm-screen').first();
+  await xtermScreen.click();
+  await page.waitForTimeout(500); // Give xterm time to handle focus
 
   // Send the echo command via keyboard events directed at the focused
   // xterm.js element.  xterm processes them via its internal key handler,

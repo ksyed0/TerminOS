@@ -3,44 +3,48 @@
 ## Epics
 
 ```
+EPIC-0000: Core Terminal
+Description: PTY integration, tab management, xterm.js rendering, keyboard input
+Release Target: MVP (v0.1)
+Status: Complete
+Dependencies: None
+
+User Stories:
+- US-0000 (EPIC-0000): As a user, I want a working terminal, so that I can execute commands.
+  Priority: High (P0)
+  Status: Complete
+  Acceptance Criteria:
+    - [x] AC-0000: Cmd+T creates new terminal tab
+    - [x] AC-0001: Terminal renders with shell prompt
+    - [x] AC-0002: Return key sends input to PTY
+    - [x] AC-0003: Terminal output displays in xterm.js
+```
+
+```
 EPIC-0001: Code Editing
-Description: Core editor.
+Description: Core editor with CodeMirror 6, syntax highlighting
 Release Target: MVP (v0.1)
-Status: In Progress
-Dependencies: None
-
-EPIC-0002: File Management
-Description: File Explorer.
-Release Target: MVP (v0.1)
-Status: Planned
-Dependencies: EPIC-0001
-
-EPIC-0003: SSH & Remote Connections
-Description: SSH/SFTP and Mosh connections for remote servers.
-Release Target: MVP (v0.1)
-Status: Planned
-Dependencies: None
-
-EPIC-0004: Session Management
-Description: Multiple tabs, panes, and session persistence.
-Release Target: v0.2
-Status: Planned
-Dependencies: EPIC-0003
-
-EPIC-0005: Productivity Features
-Description: Command palette, snippets, and keyboard shortcuts.
-Release Target: v0.2
-Status: Planned
-Dependencies: EPIC-0003
-
-EPIC-0006: Customization
-Description: Themes, fonts, and visual customization.
-Release Target: v0.2
-Status: Planned
-Dependencies: None
+Status: Complete
+Dependencies: EPIC-0000
 ```
 
 ## User Stories
+
+### EPIC-0000: Core Terminal
+
+```
+US-0000 (EPIC-0000): As a user, I want a working terminal, so that I can execute commands.
+Priority: High (P0)
+Estimate: M
+Status: In Progress
+Branch:
+Acceptance Criteria:
+  - [ ] AC-0000: Cmd+T creates new terminal tab
+  - [ ] AC-0001: Terminal renders with shell prompt
+  - [ ] AC-0002: Return key sends input to PTY
+  - [ ] AC-0003: Terminal output displays in xterm.js
+Dependencies: None
+```
 
 ### EPIC-0001: Code Editing
 

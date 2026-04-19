@@ -12,7 +12,7 @@ import { ConfigStore } from '../config/store';
 import { createProvider } from '../providers/factory';
 import type { AIRequest } from '../providers/interface';
 
-const INTERPRET_TIMEOUT_MS = 30_000;
+const INTERPRET_TIMEOUT_MS = 45_000;  // 45s default - adjust per model capability
 
 /** Map of tabId → PtyManager. Supports multi-tab. */
 const ptyMap = new Map<string, PtyManager>();

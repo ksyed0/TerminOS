@@ -47,18 +47,38 @@ export class OpenAIProvider implements AIProvider {
       `\nUser request: ${request.user_input}`,
     ].filter(Boolean).join('\n');
 
-    const completion = await this.client.chat.completions.create({
-      model: this.config.model,
-      max_tokens: 512,
-      response_format: { type: 'json_object' },
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: userMessage },
-      ],
-    });
+    try {
+      const completion = await this.client.chat.completions.create({
+        model: this.config.model,
+        max_tokens: 512,
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: userMessage },
+        ],
+      });
 
-    const text = completion.choices[0]?.message?.content ?? '{}';
-    return JSON.parse(text) as AIResponse;
+      const text = completion.choices[0]?.message?.content ?? '{}';
+      return JSON.parse(text) as AIResponse;
+    } catch (err: unknown) {
+      const error = err as { status?: number; message?: string; cause?: { message?: string } };
+      const errorMessage = error.message || error.cause?.message || String(err);
+      const is400FormatError = error.status === 400 && errorMessage.includes('response_format');
+      
+      if (is400FormatError) {
+        const retryCompletion = await this.client.chat.completions.create({
+          model: this.config.model,
+          max_tokens: 512,
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT + '\n\nIMPORTANT: Respond with ONLY valid JSON, no markdown.' },
+            { role: 'user', content: userMessage },
+          ],
+        });
+        const text = retryCompletion.choices[0]?.message?.content ?? '{}';
+        return JSON.parse(text) as AIResponse;
+      }
+      throw err;
+    }
   }
 
   async testConnection(): Promise<ConnectionStatus> {
